@@ -1,0 +1,54 @@
+{
+  "name": "rupixel",
+  "version": "0.1.0",
+  "description": "Pixel-native visual RAG, ported to Rust on the ruvector ANN substrate — screenshot/document retrieval over visual embeddings (a Rust port of PixelRAG) with a metaharness benchmark CLI.",
+  "keywords": [
+    "rag",
+    "visual-rag",
+    "pixel-rag",
+    "pixelrag",
+    "retrieval-augmented-generation",
+    "vector-search",
+    "ann",
+    "hnsw",
+    "ivf",
+    "rust",
+    "ruvector",
+    "document-retrieval",
+    "screenshot",
+    "ocr-free",
+    "colpali",
+    "multimodal",
+    "embeddings",
+    "metaharness",
+    "darwin",
+    "benchmark"
+  ],
+  "homepage": "https://github.com/ruvnet/rupixel#readme",
+  "bugs": "https://github.com/ruvnet/rupixel/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ruvnet/rupixel.git"
+  },
+  "license": "MIT",
+  "author": "ruvnet",
+  "type": "commonjs",
+  "bin": {
+    "rupixel": "bin/rupixel.js"
+  },
+  "files": [
+    "bin/",
+    "docs/",
+    "rust/",
+    ".metaharness/",
+    "tests/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "rupixel": "node bin/rupixel.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

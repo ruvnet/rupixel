@@ -1,0 +1,11 @@
+{
+  "_comment": "SUBSET fixture for PixelRAG darwin harness (ADR-264). NOT the upstream ViDoRe/Wikipedia corpus. 'image' paths are placeholders for rendered query screenshots; in M0 only the text drives the smoke harness.",
+  "dataset": "pixelrag-subset-v0",
+  "queries": [
+    { "query_id": "q-001", "text": "quarterly revenue table 2025", "image": "queries/q-001.png" },
+    { "query_id": "q-002", "text": "bar chart of energy consumption by region", "image": "queries/q-002.png" },
+    { "query_id": "q-003", "text": "organizational chart engineering team", "image": "queries/q-003.png" },
+    { "query_id": "q-004", "text": "invoice line items and totals", "image": "queries/q-004.png" },
+    { "query_id": "q-005", "text": "scientific figure with axis labels", "image": "queries/q-005.png" }
+  ]
+}

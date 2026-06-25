@@ -1,0 +1,31 @@
+[package]
+name        = "pixelrag-render"
+version     = "0.0.0"
+edition     = "2021"
+publish     = false
+description = "PixelRAG document → screenshot-tile rendering (web + PDF) with disk cache. ADR-264, optional/M2."
+authors     = ["ruvnet", "claude-flow"]
+license     = "MIT OR Apache-2.0"
+repository  = "https://github.com/ruvnet/ruvector"
+keywords    = ["visual-rag", "rendering", "screenshot", "pdf", "pixelrag"]
+categories  = ["multimedia::images", "rendering"]
+
+# M0: std-only skeleton. NO external crates yet — see ADR-264 §"Dependencies".
+# Intended M1/M2 dependencies (DO NOT enable until the milestone that needs them):
+#
+# [dependencies]
+# headless_chrome = "1"          # web rendering via Chrome DevTools Protocol (CDP)
+#                                # alt: playwright-rs for Playwright-CDP parity with upstream pixelshot
+# pdfium-render   = "0.8"        # PDF page → bitmap rasterization (pdfium backend)
+# image           = "0.25"       # tile encode/decode (PNG/JPEG), crop, resize
+# tokio           = { version = "1", features = ["fs", "rt", "macros"] } # async render + disk I/O
+# serde           = { version = "1", features = ["derive"] }            # cache manifest (de)serialization
+# serde_json      = "1"          # cache manifest persistence
+# sha2            = "0.10"       # content-addressed cache keys (hash of url/pdf bytes + render config)
+# thiserror       = "1"          # error enum derive
+#
+# pixelrag-core   = { path = "../pixelrag-core" }  # RenderConfig / Tile types shared across the pipeline
+
+[dependencies]
+
+[dev-dependencies]

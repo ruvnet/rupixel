@@ -1,0 +1,12 @@
+{
+  "_comment": "SUBSET ground truth for PixelRAG darwin harness (ADR-264). NOT upstream. For each query_id, 'relevant' is the ranked list of tile_ids (most relevant first) used to compute recall@10 / NDCG@10 / MRR.",
+  "dataset": "pixelrag-subset-v0",
+  "k": 10,
+  "relevance": [
+    { "query_id": "q-001", "relevant": ["tile-000", "tile-003"] },
+    { "query_id": "q-002", "relevant": ["tile-001"] },
+    { "query_id": "q-003", "relevant": ["tile-002"] },
+    { "query_id": "q-004", "relevant": ["tile-003", "tile-000"] },
+    { "query_id": "q-005", "relevant": ["tile-004", "tile-001"] }
+  ]
+}

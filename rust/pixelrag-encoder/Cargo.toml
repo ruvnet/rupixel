@@ -1,0 +1,34 @@
+[package]
+name = "pixelrag-encoder"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "PixelRAG visual encoder wrapper (ONNX / Qwen3-VL-Embedding / CLIP surrogate / Python sidecar). M0 std-only skeleton per ADR-264."
+
+# ---------------------------------------------------------------------------
+# M0 RULE: [dependencies] MUST be empty (std-only) so the workspace builds
+# cleanly offline. The deps below are the INTENDED M1 wiring, documented as
+# comments only — DO NOT uncomment until M1 (ADR-264 §Honest embedding strategy).
+# ---------------------------------------------------------------------------
+[dependencies]
+# --- M1: ONNX Runtime backend (ADR-264 v2, recommended path) ---
+# ort = "2"                # ONNX Runtime Rust binding (pykeio/ort) — model load + inference
+# ndarray = "0.16"         # tensor handling for ONNX input/output buffers
+#
+# --- M1: embedding cache ---
+# lru = "0.12"             # backing store for the LRU EmbeddingCache impl
+#
+# --- M1: error / serialization plumbing ---
+# thiserror = "2"          # ergonomic EncoderError variants
+# serde = { version = "1", features = ["derive"] }  # EmbedderConfig (de)serialization
+#
+# --- M1: Python sidecar fallback (ADR-264 v1) ---
+# (std::process::Command + a small JSON/IPC contract; serde_json for payloads)
+# serde_json = "1"
+#
+# --- M2/M3 (aspirational): pure-Rust encoder migration (ADR-264 v3) ---
+# candle-core = "0.8"      # HuggingFace Candle — safetensors/ONNX load, ruvector-cnn kernels
+# ruvector-cnn = { path = "../ruvector-cnn" }  # local vision CNN kernels for encode
+
+[lints]
+workspace = true

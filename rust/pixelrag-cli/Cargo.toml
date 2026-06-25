@@ -1,0 +1,25 @@
+[package]
+name = "pixelrag-cli"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "PixelRAG CLI + benchmark harness — ingestion, search, and the darwin-driven benchmark entry point (ADR-264, M0 scaffold)."
+
+# ── M1: benchmark harness wired to the real pipeline ─────────────────────────
+# Per ADR-264 §Validation. The `benchmark` subcommand builds the index via
+# pixelrag-core + the deterministic SyntheticEmbedder (pixelrag-encoder), runs the
+# subset-fixture queries, and scores recall@10 / NDCG@10 / MRR + latency/build/memory.
+# Arg parsing stays a hand-rolled std parser (no clap needed for the fixed darwin
+# command surface). The index/search bodies do the actual work; clap and async are
+# deferred to a later milestone.
+[dependencies]
+pixelrag-core    = { path = "../pixelrag-core" }     # pipeline + index adaptor + search (M1)
+pixelrag-encoder = { path = "../pixelrag-encoder" }  # SyntheticEmbedder + Image type (M1 plumbing)
+serde      = { workspace = true }                    # report (de)serialization
+serde_json = { workspace = true }                    # query/result/ground-truth/report JSON I/O
+
+# ── M1+ (deferred) ───────────────────────────────────────────────────────────
+# pixelrag-render  = { path = "../pixelrag-render" }    # headless render (M2, optional feature)
+# pixelrag-serve   = { path = "../pixelrag-serve" }     # HTTP server entry (M3, optional feature)
+# clap             = { version = "4", features = ["derive"] } # arg parsing (replaces std stub later)
+# tokio            = { version = "1", features = ["full"] }    # async ingest/search orchestration

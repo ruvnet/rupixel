@@ -1,0 +1,4 @@
+PLACEHOLDER TILE (subset fixture, not a real screenshot)
+tile_id: tile-001
+doc: energy-report-2025
+caption: Bar chart of energy consumption by region (North, South, East, West). Y-axis = GWh. Visual structure = vertical bar chart with axis labels and legend.

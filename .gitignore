@@ -1,0 +1,14 @@
+# Rust
+/target/
+**/target/
+Cargo.lock
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Benchmark output (generated)
+bench_output/
+
+# OS
+.DS_Store

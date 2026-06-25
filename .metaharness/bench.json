@@ -1,0 +1,38 @@
+{
+  "id": "repo-native",
+  "version": "0.1.0",
+  "createdAt": "2026-06-25T18:03:21.061Z",
+  "taskHash": "777f5485b70a95429c6cd6be31d883d69ad06e9ee34d814ccb8cf7df5e33a949",
+  "tasks": [
+    {
+      "id": "task-0001",
+      "repo": "C:\\Users\\ruv\\ruvector",
+      "commit": "WORKDIR",
+      "title": "Repo native smoke task",
+      "prompt": "Keep the repository test suite green.",
+      "publicTestCommand": "npm test",
+      "hiddenTestCommand": "npm test",
+      "regressionTestCommand": "npm test",
+      "timeoutMs": 300000,
+      "maxCostUsd": 2,
+      "allowedMutationFiles": [],
+      "blockedFiles": [
+        ".env",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        ".github/workflows"
+      ],
+      "successCriteria": [
+        "public test passes",
+        "hidden test passes",
+        "regression suite passes"
+      ],
+      "difficulty": 1,
+      "tags": [
+        "smoke",
+        "repo-native"
+      ]
+    }
+  ]
+}

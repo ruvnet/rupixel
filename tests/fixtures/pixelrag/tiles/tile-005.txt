@@ -1,0 +1,4 @@
+PLACEHOLDER TILE (subset fixture, not a real screenshot)
+tile_id: tile-005
+doc: misc-distractor
+caption: Distractor tile — a plain paragraph of body text with no table, chart, or diagram. Used to verify the harness does not over-retrieve irrelevant tiles.

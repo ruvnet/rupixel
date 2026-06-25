@@ -1,0 +1,4 @@
+PLACEHOLDER TILE (subset fixture, not a real screenshot)
+tile_id: tile-004
+doc: nature-paper-fig3
+caption: Scientific figure with labeled X and Y axes, error bars, and a fitted curve. Visual structure = line/scatter plot with axis labels and caption.

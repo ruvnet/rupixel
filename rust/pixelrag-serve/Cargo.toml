@@ -1,0 +1,25 @@
+[package]
+name = "pixelrag-serve"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "PixelRAG HTTP serve tier (M3) — REST API over the visual-RAG pipeline. ADR-264."
+
+# M0 is std-only: [dependencies] MUST stay empty so the workspace builds offline.
+# The crates below are the INTENDED M1+/M3 dependencies (documented, not enabled):
+#
+# [dependencies]
+# pixelrag-core    = { path = "../pixelrag-core" }    # M1: pipeline orchestrator (index/search)
+# pixelrag-encoder = { path = "../pixelrag-encoder" } # M1: tile embedding (used by /index)
+# hyper            = { version = "1", features = ["server", "http1"] } # M3: HTTP server
+# tokio            = { version = "1", features = ["rt-multi-thread", "net", "macros"] } # M3: async runtime
+# http-body-util   = "0.1"                            # M3: body collection for hyper 1.x
+# serde            = { version = "1", features = ["derive"] } # M3: request/response (de)serialization
+# serde_json       = "1"                              # M3: JSON request/response bodies
+# tracing          = "0.1"                            # M3: structured request logging
+# tonic            = { version = "0.12", optional = true } # M3 (optional): gRPC surface
+#
+# [features]
+# grpc = ["dep:tonic"]                                # optional gRPC tier per ADR-264
+
+[dependencies]
