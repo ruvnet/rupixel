@@ -35,6 +35,8 @@ const btnToggle = document.getElementById("btn-toggle");
 const describeOn = document.getElementById("describe-on");
 const orKeyEl = document.getElementById("or-key");
 const captionEl = document.getElementById("caption");
+const ccOverlay = document.getElementById("cc-overlay");
+const KEY_STORE = "rupixel_openrouter_key"; // sessionStorage: origin-scoped, cleared on tab close
 const srcButtons = {
   sample: document.getElementById("src-sample"),
   webcam: document.getElementById("src-webcam"),
@@ -134,30 +136,77 @@ async function tick() {
 const VISION_MODEL = "qwen/qwen3-vl-235b-a22b-instruct";
 let describeWarned = false;
 
-async function maybeDescribe(kf) {
+// Coalesced describer + scrolling history. On heavy motion many keyframes pass the
+// gate; instead of describing each (which floods/overwrites), we keep ONE describe
+// in flight and always describe the LATEST pending frame, dropping the intermediate
+// ones. Finished captions are appended to a timestamped history, and the previous
+// caption is passed as TEMPORAL CONTEXT so the model narrates change, not restate.
+const captionLog = [];        // [{ ts, text, live, dropped }] newest-first
+const MAX_LOG = 14;
+let describePending = null;   // newest keyframe awaiting description
+let describing = false;
+let lastCaption = "";
+let burstDropped = 0;         // frames superseded while a describe was in flight
+
+function renderCaptionLog() {
+  if (!captionLog.length) { captionEl.hidden = true; return; }
+  captionEl.hidden = false;
+  captionEl.innerHTML = captionLog.map((c) =>
+    `<div class="cap-entry${c.live ? " live" : ""}">` +
+    `<span class="cap-ts">${esc(c.ts)}${c.dropped ? ` ·+${c.dropped}` : ""}</span>` +
+    `<span class="cap-text">${esc(c.text) || "…"}</span></div>`).join("");
+  ccOverlay.textContent = captionLog[0]?.text || ""; // live subtitle on the video
+}
+
+function maybeDescribe(kf) {
   if (!describeOn.checked) return;
   const cred = orKeyEl.value.trim();
   if (!cred) {
     if (!describeWarned) { setStatus("Auto-describe needs an OpenRouter key (or a proxy URL) in the field above.", "ready"); describeWarned = true; }
     return;
   }
+  if (describing || describePending) burstDropped++; // this frame supersedes a queued/in-flight one
+  describePending = kf;                              // always describe the freshest
+  pumpDescribe();
+}
+
+async function pumpDescribe() {
+  if (describing || !describePending) return;
+  const cred = orKeyEl.value.trim(); if (!cred) return;
+  const kf = describePending; describePending = null; describing = true;
+  const entry = { ts: source === "sample" ? kf.label : `t=${clock(performance.now() - startMs)}`, text: "", live: true, dropped: burstDropped };
+  burstDropped = 0;
+  captionLog.unshift(entry);
+  while (captionLog.length > MAX_LOG) captionLog.pop();
+  renderCaptionLog();
+  try { await describeOne(kf, cred, entry); }
+  finally {
+    entry.live = false; renderCaptionLog();
+    describing = false;
+    if (describePending) pumpDescribe(); // describe the newest frame that arrived during this one
+  }
+}
+
+async function describeOne(kf, cred, entry) {
   const viaProxy = /^https?:\/\//i.test(cred);
   const url = viaProxy ? cred : "https://openrouter.ai/api/v1/chat/completions";
   const headers = { "Content-Type": "application/json" };
   if (!viaProxy) headers["Authorization"] = `Bearer ${cred}`; // BYO key → direct to OpenRouter
+  const sys = "You narrate a live video feed. Describe ONLY the current frame in one short, concrete sentence. If it continues the previous moment, note what CHANGED instead of restating the scene.";
+  const ctx = lastCaption ? `Previous moment: "${lastCaption}". ` : "";
   const body = {
     model: VISION_MODEL, stream: true,
-    messages: [{ role: "user", content: [
-      { type: "text", text: "Describe what is shown in one short, concrete sentence." },
-      { type: "image_url", image_url: { url: kf.thumb } },
-    ] }],
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content: [
+        { type: "text", text: `${ctx}Describe the current frame.` },
+        { type: "image_url", image_url: { url: kf.thumb } },
+      ] },
+    ],
   };
-  captionEl.hidden = false;
-  captionEl.innerHTML = '<span class="cap-dot"></span><span class="cap-text"></span>';
-  const out = captionEl.querySelector(".cap-text");
   try {
     const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-    if (!res.ok || !res.body) { out.textContent = `describe failed (${res.status})`; return; }
+    if (!res.ok || !res.body) { entry.text = `describe failed (${res.status})`; renderCaptionLog(); return; }
     const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
     for (;;) {
       const { value, done } = await reader.read(); if (done) break;
@@ -166,11 +215,12 @@ async function maybeDescribe(kf) {
       for (const line of lines) {
         const t = line.trim(); if (!t.startsWith("data:")) continue;
         const data = t.slice(5).trim(); if (data === "[DONE]") continue;
-        try { const tok = JSON.parse(data).choices?.[0]?.delta?.content; if (tok) { kf.caption += tok; out.textContent = kf.caption; } } catch {}
+        try { const tok = JSON.parse(data).choices?.[0]?.delta?.content; if (tok) { kf.caption += tok; entry.text = kf.caption; renderCaptionLog(); } } catch {}
       }
     }
-    if (qEl.value.trim()) runSearch(); // captions now show on the cards
-  } catch (e) { out.textContent = `describe error: ${e.message}`; }
+    if (kf.caption.trim()) lastCaption = kf.caption.trim();
+    if (qEl.value.trim()) runSearch(); // captions now searchable/shown on cards
+  } catch (e) { entry.text = `describe error: ${e.message}`; renderCaptionLog(); }
 }
 
 function runSearch() {
@@ -239,6 +289,19 @@ async function init() {
     setStatus(`Ready on <strong>${device.toUpperCase()}</strong> — pick a source and press Start (default is a sample feed).`, "ready");
     qEl.disabled = false; btnToggle.disabled = false;
     qEl.addEventListener("input", () => runSearch());
+
+    // Secure client-side key storage: sessionStorage is origin-scoped and cleared
+    // when the tab closes (not localStorage, which would persist on disk). The key
+    // never leaves the browser except to OpenRouter / your proxy, and is never sent
+    // to this site or committed. Restore it for this session and save on edit.
+    try { orKeyEl.value = sessionStorage.getItem(KEY_STORE) || ""; } catch {}
+    orKeyEl.addEventListener("input", () => {
+      describeWarned = false;
+      try {
+        const v = orKeyEl.value.trim();
+        if (v) sessionStorage.setItem(KEY_STORE, v); else sessionStorage.removeItem(KEY_STORE);
+      } catch {}
+    });
     await start(); // auto-start the sample feed so the demo is alive on load
   } catch (e) {
     console.error(e);

@@ -43,10 +43,24 @@
 }
 .key-input:focus { outline: none; border-color: var(--accent, #2dd4bf); }
 .key-note { font-size: 0.72rem; opacity: 0.6; white-space: nowrap; }
+/* closed-caption transcript log */
 .caption {
-  margin-top: 0.7rem; padding: 0.7rem 0.9rem; border-radius: 10px; font-size: 0.9rem; line-height: 1.4;
-  background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.25); display: flex; gap: 0.5rem; align-items: flex-start;
+  margin-top: 0.7rem; max-height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem;
+  padding: 0.6rem 0.75rem; border-radius: 10px; background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.1); font-size: 0.86rem; line-height: 1.4;
 }
-.cap-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent, #2dd4bf); margin-top: 0.4rem; flex: 0 0 auto; animation: pulse 1.2s infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.cap-entry { display: flex; gap: 0.6rem; align-items: baseline; opacity: 0.8; }
+.cap-entry.live { opacity: 1; }
+.cap-entry.live .cap-text { border-left: 2px solid var(--accent, #2dd4bf); padding-left: 0.5rem; animation: pulse 1.4s infinite; }
+.cap-ts { flex: 0 0 auto; min-width: 70px; font-size: 0.72rem; opacity: 0.55; font-variant-numeric: tabular-nums; }
+.cap-text { color: inherit; }
+
+/* live subtitle overlaid on the video, like closed captions */
+.cc-overlay {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: 92%;
+  background: rgba(0,0,0,0.74); color: #fff; padding: 0.35rem 0.85rem; border-radius: 8px;
+  font-size: 0.95rem; line-height: 1.35; text-align: center; pointer-events: none;
+}
+.cc-overlay:empty { display: none; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 .shot-cap { margin: 0.3rem 0 0; font-size: 0.8rem; opacity: 0.8; line-height: 1.35; }

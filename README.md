@@ -29,15 +29,24 @@ embedded with CLIP so you can search the stream by meaning. Highlights:
 
 - **Runs on your GPU when available** (WebGPU via transformers.js v3), falling back
   to CPU/WASM automatically — so frame embedding is fast enough to feel live.
-- **Optional auto-describe:** each kept keyframe can be captioned by a streaming
-  vision LLM (default **Qwen3-VL**, a recent, low-cost Chinese vision model), with
-  the caption appearing word-by-word.
-- **Your API key is never exposed.** The public demo is **bring-your-own-key**
-  (your OpenRouter key stays in your browser tab, sent only to OpenRouter, never
-  committed or uploaded). For a shared/managed key, run the included
-  **server-side proxy** (`crates/pixelrag-cli/sidecar/describe-proxy.mjs`) that
-  reads the key from an environment variable — the key never reaches the browser
-  or the repo.
+- **Runs on your GPU when available** (WebGPU via transformers.js v3), falling back
+  to CPU/WASM automatically.
+- **Optional live captions (like closed captions).** A streaming vision LLM
+  (default **Qwen3-VL**, a recent, low-cost Chinese vision model) narrates each
+  keyframe word-by-word: the current line shows as a **subtitle over the video**,
+  and every line is kept in a **timestamped transcript** below it.
+- **Built for motion.** When lots changes at once, it doesn't flood — it describes
+  only the **latest settled frame** (skipping the in-between ones, shown as `·+N`)
+  and feeds the **previous caption as context**, so the captions narrate *what
+  changed* ("the screen has switched to…") instead of restarting each time.
+- **Your API key is handled safely.** The public demo is **bring-your-own-key**:
+  your OpenRouter key is stored only in your browser tab (`sessionStorage`,
+  cleared when you close it), sent only to OpenRouter, never uploaded here or
+  committed. For a shared/managed key, run the included **server-side proxy**
+  (`describe-proxy.mjs`) that reads the key from an environment variable and paste
+  the proxy's URL instead — the key then never reaches the browser at all.
+
+[![rupixel live captions — streaming Qwen3-VL narration over a video feed](docs/assets/live-cc.png)](https://ruvnet.github.io/rupixel/live.html)
 
 Design details: [ADR-265](docs/adr/ADR-265-real-time-video-visual-rag-rupixel.md)
 (pipeline), [ADR-266](docs/adr/ADR-266-midstream-streaming-frame-ingestion.md)

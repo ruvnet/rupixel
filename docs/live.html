@@ -40,6 +40,7 @@
           <video id="feed" playsinline muted></video>
           <img id="sample-frame" alt="sample feed frame" />
           <span id="live-dot" class="live-dot" hidden>● LIVE</span>
+          <div id="cc-overlay" class="cc-overlay"></div>
         </div>
         <div class="stats">
           <div class="stat"><span id="kf-count" class="stat-num">0</span><span class="stat-lbl">keyframes kept</span></div>
@@ -54,7 +55,7 @@
         </label>
         <input id="or-key" type="password" autocomplete="off" class="key-input"
           placeholder="OpenRouter API key (sk-or-…) — stays in your browser" />
-        <span class="key-note" title="Your key is held only in this browser tab, sent only to OpenRouter, and is never uploaded to this site or stored in the repo.">🔒 key stays in your browser</span>
+        <span class="key-note" title="Stored only in this browser tab (sessionStorage, origin-scoped) and cleared when you close it. Sent only to OpenRouter or your proxy — never uploaded to this site, never committed.">🔒 stored in this tab only, cleared on close</span>
       </div>
       <div id="caption" class="caption" hidden></div>
     </section>
