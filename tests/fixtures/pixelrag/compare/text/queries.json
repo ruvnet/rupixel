@@ -1,0 +1,36 @@
+{
+  "queries": [
+    {
+      "query_id": "vq1",
+      "text": "the unseen monster lurking at a galaxy's center"
+    },
+    {
+      "query_id": "vq2",
+      "text": "the storming of the Bastille and the guillotine"
+    },
+    {
+      "query_id": "vq3",
+      "text": "how green plants turn sunlight into chemical energy"
+    },
+    {
+      "query_id": "vq4",
+      "text": "a small strong shot of Italian coffee with crema"
+    },
+    {
+      "query_id": "vq5",
+      "text": "how computers split data into packets across a network"
+    },
+    {
+      "query_id": "vq6",
+      "text": "ornate, dramatic 17th-century classical music"
+    },
+    {
+      "query_id": "vq7",
+      "text": "a tall yellow flower that follows the sun"
+    },
+    {
+      "query_id": "vq8",
+      "text": "a vibrant underwater coral ecosystem"
+    }
+  ]
+}

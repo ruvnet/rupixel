@@ -147,6 +147,34 @@ query ──embed──▶ vector ──────────search───�
 
 ---
 
+## Benchmark: traditional (text) RAG vs visual RAG
+
+Same 8 documents, same 8 paraphrase queries, same ground truth — only the
+*modality* differs: **MiniLM over each page's extracted text** vs **CLIP over each
+page's rendered screenshot**. Full method, caveats, and reproduce commands in
+**[`docs/BENCHMARK.md`](./docs/BENCHMARK.md)**.
+
+| Metric | Traditional text RAG (MiniLM) | Visual RAG (CLIP) |
+|---|---:|---:|
+| top-1 accuracy | **1.00** (8/8) | **1.00** (8/8)¹ |
+| nDCG@10 / MRR | 1.00 / 1.00 | 1.00 / 1.00 |
+| query latency p50 | 0.62 ms | 0.52 ms |
+| embedding dim | 384 | 512 |
+| needs | a clean **text layer** | a **rendered image** |
+
+¹ 8/8 with native (sharp) preprocessing; the **in-browser** demo (canvas) is **7/8,
+MRR 0.94** — one near-tie.
+
+**Honest reading:** on this small, **text-clean** corpus *both* paths retrieve
+perfectly — accuracy doesn't separate them. The real trade-off is qualitative:
+traditional RAG is the cheap, strong default for **text-rich** documents; visual
+RAG earns its keep where text extraction **fails or loses structure** (scans,
+complex layouts, tables, charts) — which this corpus deliberately doesn't stress.
+A document-specialized visual model (Qwen3-VL / ColPali, GPU) would lift the
+visual numbers above the CLIP baseline. See [`docs/BENCHMARK.md`](./docs/BENCHMARK.md).
+
+---
+
 ## Benchmark harness (metaharness / darwin)
 
 The benchmark suite is **darwin-generated** (`.metaharness/bench.json`) and

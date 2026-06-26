@@ -1,0 +1,54 @@
+{
+  "dataset": "pixelrag-compare-8doc",
+  "k": 10,
+  "relevance": [
+    {
+      "query_id": "vq1",
+      "relevant": [
+        "doc-00"
+      ]
+    },
+    {
+      "query_id": "vq2",
+      "relevant": [
+        "doc-01"
+      ]
+    },
+    {
+      "query_id": "vq3",
+      "relevant": [
+        "doc-02"
+      ]
+    },
+    {
+      "query_id": "vq4",
+      "relevant": [
+        "doc-03"
+      ]
+    },
+    {
+      "query_id": "vq5",
+      "relevant": [
+        "doc-04"
+      ]
+    },
+    {
+      "query_id": "vq6",
+      "relevant": [
+        "doc-05"
+      ]
+    },
+    {
+      "query_id": "vq7",
+      "relevant": [
+        "doc-06"
+      ]
+    },
+    {
+      "query_id": "vq8",
+      "relevant": [
+        "doc-07"
+      ]
+    }
+  ]
+}
