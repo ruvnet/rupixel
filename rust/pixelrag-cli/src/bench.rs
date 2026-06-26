@@ -740,6 +740,13 @@ fn write_predictions(
         .map_err(|e| BenchError { message: format!("write predictions {}: {e}", path.display()) })
 }
 
+/// Public re-export of [`write_report`] for the visual benchmark module, which
+/// builds an equivalent [`BenchReport`] over CLIP vectors and reuses the identical
+/// JSON serialization so text and visual reports share one schema.
+pub fn write_report_public(path: &Path, report: &BenchReport) -> Result<(), BenchError> {
+    write_report(path, report)
+}
+
 /// Serialize the [`BenchReport`] to JSON (the unit darwin scores).
 fn write_report(path: &Path, report: &BenchReport) -> Result<(), BenchError> {
     if let Some(parent) = path.parent() {

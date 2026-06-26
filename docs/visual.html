@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rupixel — visual RAG (text → document image, live CLIP)</title>
+  <meta name="description" content="In-browser visual RAG demo: a text query is matched against real document screenshots using CLIP ViT-B/32 running client-side via transformers.js." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">▦</span>
+        <span class="wordmark">rupixel</span>
+        <a class="nav-link" href="index.html">→ text demo</a>
+      </div>
+      <h1>visual RAG <span class="tag">text → image, live CLIP</span></h1>
+      <p class="subtitle">
+        Type a query in plain words — <code>CLIP ViT-B/32</code> embeds it client-side and
+        ranks a corpus of real <strong>document screenshots</strong> by visual + semantic
+        meaning. Text and pixels share one embedding space, all in your browser.
+      </p>
+    </header>
+
+    <section class="search">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          id="query"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Describe a document image…"
+          value="a vibrant underwater coral ecosystem"
+          disabled
+        />
+      </div>
+      <div id="status" class="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="status-text">Loading CLIP ViT-B/32 (quantized)…</span>
+      </div>
+    </section>
+
+    <section id="results" class="gallery" aria-live="polite"></section>
+
+    <footer class="footer">
+      <p>
+        Real <strong>CLIP ViT-B/32</strong> running in your browser. Text query → ranked
+        document screenshots, by visual+semantic meaning. Qwen3-VL/ColPali is the GPU upgrade.
+      </p>
+      <p class="meta">
+        Model + inference via <a href="https://github.com/xenova/transformers.js" target="_blank" rel="noopener">transformers.js</a> ·
+        runs on CPU/WASM · no server, no precomputed vectors ·
+        <a href="https://github.com/ruvnet/rupixel" target="_blank" rel="noopener">see the repo</a>.
+      </p>
+    </footer>
+  </main>
+
+  <script type="module" src="visual.js"></script>
+</body>
+</html>

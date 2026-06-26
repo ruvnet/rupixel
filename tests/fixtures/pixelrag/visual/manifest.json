@@ -1,0 +1,50 @@
+[
+  {
+    "id": "doc-00",
+    "topic": "black holes / astronomy",
+    "url": "https://en.wikipedia.org/wiki/Black_hole",
+    "image": "corpus-img/doc-00.png"
+  },
+  {
+    "id": "doc-01",
+    "topic": "french revolution / history",
+    "url": "https://en.wikipedia.org/wiki/French_Revolution",
+    "image": "corpus-img/doc-01.png"
+  },
+  {
+    "id": "doc-02",
+    "topic": "photosynthesis / biology",
+    "url": "https://en.wikipedia.org/wiki/Photosynthesis",
+    "image": "corpus-img/doc-02.png"
+  },
+  {
+    "id": "doc-03",
+    "topic": "espresso / coffee",
+    "url": "https://en.wikipedia.org/wiki/Espresso",
+    "image": "corpus-img/doc-03.png"
+  },
+  {
+    "id": "doc-04",
+    "topic": "tcp/ip / networking",
+    "url": "https://en.wikipedia.org/wiki/Internet_protocol_suite",
+    "image": "corpus-img/doc-04.png"
+  },
+  {
+    "id": "doc-05",
+    "topic": "baroque music",
+    "url": "https://en.wikipedia.org/wiki/Baroque_music",
+    "image": "corpus-img/doc-05.png"
+  },
+  {
+    "id": "doc-06",
+    "topic": "sunflower / plants",
+    "url": "https://en.wikipedia.org/wiki/Sunflower",
+    "image": "corpus-img/doc-06.png"
+  },
+  {
+    "id": "doc-07",
+    "topic": "great barrier reef / ocean",
+    "url": "https://en.wikipedia.org/wiki/Great_Barrier_Reef",
+    "image": "corpus-img/doc-07.png"
+  }
+]

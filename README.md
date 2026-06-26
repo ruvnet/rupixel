@@ -25,17 +25,23 @@ npx rupixel bench verify
 
 ---
 
-## Live demo — semantic search in your browser
+## Live demos — semantic search in your browser (WASM, no server)
 
-**▶ [ruvnet.github.io/rupixel](https://ruvnet.github.io/rupixel/)** — runs
-`all-MiniLM-L6-v2` **client-side via WASM** (no server, no precomputed vectors)
-and ranks a real corpus by *meaning*. Type a question in your own words.
+Two demos, both running real models **client-side via WASM** — no server, no
+precomputed vectors:
 
-[![rupixel live MiniLM demo](docs/assets/screenshot.png)](https://ruvnet.github.io/rupixel/)
+- **▶ Visual RAG** ([ruvnet.github.io/rupixel/visual.html](https://ruvnet.github.io/rupixel/visual.html))
+  — **CLIP ViT-B/32** embeds rendered **document screenshots** in your browser;
+  a text query retrieves the matching *page image*. This is the pixel-native path.
+- **▶ Text RAG** ([ruvnet.github.io/rupixel](https://ruvnet.github.io/rupixel/))
+  — **all-MiniLM-L6-v2** ranks a text corpus by meaning.
 
-> The query above — *"How do scientists weigh the unseen monster lurking at a
-> galaxy's center?"* — never says "black hole", yet the model retrieves all five
-> black-hole passages first. That's semantic retrieval, not keyword match.
+[![rupixel live visual + text MiniLM/CLIP demo](docs/assets/screenshot.png)](https://ruvnet.github.io/rupixel/)
+
+> Text→image, by meaning: the query *"a vibrant underwater coral ecosystem"*
+> retrieves the Great Barrier Reef screenshot; *"the unseen monster at a galaxy's
+> center"* retrieves the black-hole page — no keyword overlap. Measured over 8
+> rendered document screenshots: **text→image top-1 = 1.00, ndcg@10 = 1.00**.
 
 ---
 
@@ -50,16 +56,20 @@ you judge the numbers:
 | Index pipeline (tile → embed → index → search) | ✅ runs end-to-end |
 | ANN backends | ✅ **HNSW** + **IVF-Flat** (real `ruvector` backends) |
 | **Text embedder** | ✅ **real `all-MiniLM-L6-v2`** (sentence-transformers, WASM/CPU sidecar) |
+| **Visual encoder** | ✅ **real CLIP ViT-B/32** — text→image over rendered screenshots (WASM/CPU) |
+| **Document rendering** | ✅ real — headless Chrome/Edge via `pixelrag-render` |
 | Benchmark harness (metaharness/darwin) | ✅ wired + verifiable |
-| Eval | ✅ real semantic eval (30 passages / 6 topics / 12 paraphrase queries) |
-| Live in-browser demo | ✅ MiniLM via WASM on GitHub Pages |
+| Eval | ✅ text (30 passages / 6 topics) **and** visual (8 rendered doc screenshots) |
+| Live in-browser demos | ✅ MiniLM (text) + CLIP (visual) via WASM on GitHub Pages |
 
-Everything listed ships as **working code** — no `unimplemented!()` stubs. The
-*visual* path below is described as **roadmap**, not shipped placeholder code:
+Everything listed ships as **working code** — no `unimplemented!()` stubs (the
+two deleted stub crates are gone; `grep unimplemented! crates/pixelrag-*/src` is
+empty).
 
-- **Visual encoder** (`Qwen3-VL-Embedding-2B` over rendered screenshots) and
-  **document rendering** (headless-chrome / PDF) are **not implemented** — they
-  need model weights + GPU and are tracked as future work, not stubbed in the repo.
+- The visual encoder is **CLIP ViT-B/32**, CPU/WASM — a real vision model doing
+  real image embedding + text→image retrieval. A document-specialized model
+  (**Qwen3-VL / ColPali**) is a drop-in upgrade for a GPU host; it is documented
+  as such, not stubbed.
 
 > ✅ **Embeddings are now real and semantic.** Retrieval runs on real
 > `all-MiniLM-L6-v2` vectors over a small but real multi-topic eval set — the

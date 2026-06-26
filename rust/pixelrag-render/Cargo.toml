@@ -1,0 +1,14 @@
+[package]
+name = "pixelrag-render"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "PixelRAG headless render adaptor — shells the Node render_sidecar.mjs (puppeteer-core + Edge/Chrome) to turn URLs into screenshot PNGs for the visual-RAG path (ADR-264)."
+
+# This crate is a thin REAL adaptor (no stubs): it spawns `node render_sidecar.mjs`,
+# writes a JSON request to its stdin, and parses the JSON response from stdout — the
+# same subprocess + serde_json pattern pixelrag-encoder's SidecarEmbedder uses for
+# the CLIP/MiniLM embed sidecars.
+[dependencies]
+serde      = { workspace = true }
+serde_json = { workspace = true }

@@ -15,6 +15,7 @@ description = "PixelRAG CLI + benchmark harness — ingestion, search, and the d
 [dependencies]
 pixelrag-core    = { path = "../pixelrag-core" }     # pipeline + index adaptor + search (M1)
 pixelrag-encoder = { path = "../pixelrag-encoder" }  # SyntheticEmbedder + Image type (M1 plumbing)
+pixelrag-render  = { path = "../pixelrag-render" }   # headless render adaptor (visual path, ADR-264)
 serde      = { workspace = true }                    # report (de)serialization
 serde_json = { workspace = true }                    # query/result/ground-truth/report JSON I/O
 
