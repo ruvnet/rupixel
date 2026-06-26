@@ -1,11 +1,18 @@
 {
-  "_comment": "SUBSET fixture for PixelRAG darwin harness (ADR-264). NOT the upstream ViDoRe/Wikipedia corpus. 'image' paths are placeholders for rendered query screenshots; in M0 only the text drives the smoke harness.",
-  "dataset": "pixelrag-subset-v0",
+  "_comment": "REAL semantic-eval SUBSET fixture for the PixelRAG darwin harness (ADR-264). Each query is a PARAPHRASE that shares MEANING but few exact words with its same-topic tiles, so keyword overlap alone cannot solve it and recall@10 / NDCG@10 stay below 1.0 for a non-semantic ranker. Schema is harness-native: an object with a 'queries' array of {query_id, text}; 'image' paths are placeholders (M0 text-only). 12 queries, 2 per topic, across 6 topics. Still tiny vs the 8.28M-page upstream corpus.",
+  "dataset": "pixelrag-semantic-v1",
   "queries": [
-    { "query_id": "q-001", "text": "quarterly revenue table 2025", "image": "queries/q-001.png" },
-    { "query_id": "q-002", "text": "bar chart of energy consumption by region", "image": "queries/q-002.png" },
-    { "query_id": "q-003", "text": "organizational chart engineering team", "image": "queries/q-003.png" },
-    { "query_id": "q-004", "text": "invoice line items and totals", "image": "queries/q-004.png" },
-    { "query_id": "q-005", "text": "scientific figure with axis labels", "image": "queries/q-005.png" }
+    { "query_id": "q-01", "text": "How do leaves turn daylight into stored fuel and give off breathable gas?", "image": "queries/q-01.png" },
+    { "query_id": "q-02", "text": "Which cellular process locks atmospheric carbon into sugar molecules?", "image": "queries/q-02.png" },
+    { "query_id": "q-03", "text": "Why did the people of 18th-century Paris overthrow their king and end royal rule?", "image": "queries/q-03.png" },
+    { "query_id": "q-04", "text": "What happened during the bloody period of mass executions after the throne fell?", "image": "queries/q-04.png" },
+    { "query_id": "q-05", "text": "What is left behind when a giant star dies and traps everything including light?", "image": "queries/q-05.png" },
+    { "query_id": "q-06", "text": "How do scientists weigh the unseen monster lurking at a galaxy's center?", "image": "queries/q-06.png" },
+    { "query_id": "q-07", "text": "What makes a tiny, strong café drink with a golden crema on top?", "image": "queries/q-07.png" },
+    { "query_id": "q-08", "text": "How does adjusting how fine the beans are ground change the taste of a pulled shot?", "image": "queries/q-08.png" },
+    { "query_id": "q-09", "text": "How does a message travel across the internet split into addressed chunks?", "image": "queries/q-09.png" },
+    { "query_id": "q-10", "text": "What mechanism makes sure transferred data shows up intact and in order?", "image": "queries/q-10.png" },
+    { "query_id": "q-11", "text": "What musical style around 1700 used ornate, dramatic writing over a continuous bass?", "image": "queries/q-11.png" },
+    { "query_id": "q-12", "text": "How are several chasing melodic lines woven together in a fugue from that age?", "image": "queries/q-12.png" }
   ]
 }

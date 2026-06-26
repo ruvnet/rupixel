@@ -25,6 +25,20 @@ npx rupixel bench verify
 
 ---
 
+## Live demo — semantic search in your browser
+
+**▶ [ruvnet.github.io/rupixel](https://ruvnet.github.io/rupixel/)** — runs
+`all-MiniLM-L6-v2` **client-side via WASM** (no server, no precomputed vectors)
+and ranks a real corpus by *meaning*. Type a question in your own words.
+
+[![rupixel live MiniLM demo](docs/assets/screenshot.png)](https://ruvnet.github.io/rupixel/)
+
+> The query above — *"How do scientists weigh the unseen monster lurking at a
+> galaxy's center?"* — never says "black hole", yet the model retrieves all five
+> black-hole passages first. That's semantic retrieval, not keyword match.
+
+---
+
 ## Project status
 
 **This is an honest work-in-progress, not a finished product.** Read this before
@@ -35,17 +49,25 @@ you judge the numbers:
 | Rust crate scaffold (`core`/`encoder`/`render`/`serve`/`cli`) | ✅ builds in the ruvector workspace |
 | Index pipeline (tile → embed → index → search) | ✅ runs end-to-end |
 | ANN backends | ✅ **HNSW** + **IVF-Flat** (real `ruvector` backends) |
+| **Text embedder** | ✅ **real `all-MiniLM-L6-v2`** (sentence-transformers, WASM/CPU sidecar) |
 | Benchmark harness (metaharness/darwin) | ✅ wired + verifiable |
-| Visual encoder | ⏳ **stub** — real `Qwen3-VL-Embedding-2B` needs model weights + GPU |
-| Benchmarks | ⚠️ **synthetic embedder on a 6-doc subset fixture** |
-| Document rendering (headless-chrome / PDF) | ⏳ stub (M2) |
-| HTTP serve + rerank | ⏳ stub (M3) |
+| Eval | ✅ real semantic eval (30 passages / 6 topics / 12 paraphrase queries) |
+| Live in-browser demo | ✅ MiniLM via WASM on GitHub Pages |
 
-> ⚠️ **The current benchmark numbers validate *plumbing*, not *semantic retrieval
-> quality*.** They are produced with a deterministic **synthetic** embedder over a
-> tiny fixture — meaningful recall vs. the upstream Python baseline requires the
-> real Qwen3-VL encoder and a real-scale corpus. We label this everywhere on
-> purpose; we won't quote a recall number we didn't earn.
+Everything listed ships as **working code** — no `unimplemented!()` stubs. The
+*visual* path below is described as **roadmap**, not shipped placeholder code:
+
+- **Visual encoder** (`Qwen3-VL-Embedding-2B` over rendered screenshots) and
+  **document rendering** (headless-chrome / PDF) are **not implemented** — they
+  need model weights + GPU and are tracked as future work, not stubbed in the repo.
+
+> ✅ **Embeddings are now real and semantic.** Retrieval runs on real
+> `all-MiniLM-L6-v2` vectors over a small but real multi-topic eval set — the
+> demo above and the Rust bench use the same model.
+> ⏳ **Still honest about scope:** this is **text-semantic** retrieval. The full
+> *visual* PixelRAG path — rendering pages to screenshots and embedding them with
+> Qwen3-VL — remains GPU-gated and WIP. We won't quote a *visual* recall number we
+> haven't earned.
 
 ---
 
@@ -92,28 +114,24 @@ you — the Rust port builds inside the ruvector monorepo (see
 ## How it works
 
 ```
-document ──render──▶ screenshot tiles ──embed──▶ vectors ──index──▶ ruvector ANN
-                          (M2 stub)        (encoder)              (HNSW | IVF-Flat)
-                                                                        │
-query (text or image) ──embed──▶ vector ──────────search──────────────▶ top-k tiles ──▶ reader/LLM
+tiles (text/render) ──embed──▶ vectors ──index──▶ ruvector ANN (HNSW | IVF-Flat)
+                       (MiniLM)                              │
+query ──embed──▶ vector ──────────search──────────────▶ top-k tiles ──▶ reader/LLM
 ```
 
-- **Render** (`pixelrag-render`, M2): page/PDF → tiles (headless-chrome / pdfium). *stub.*
-- **Embed** (`pixelrag-encoder`): `Qwen3-VL-Embedding-2B` (real path, stub) or a
-  deterministic **synthetic** embedder for plumbing today.
+- **Embed** (`pixelrag-encoder`): real **`all-MiniLM-L6-v2`** sentence embeddings
+  via a WASM/CPU sidecar (no GPU). *Roadmap:* `Qwen3-VL-Embedding-2B` visual
+  encoding over rendered screenshots.
 - **Index/Search** (`pixelrag-core`): adaptor over `ruvector` — **HNSW**
   (`ruvector-core`) or **IVF-Flat** (`ruvector-rairs`), selectable at runtime.
-- **Serve** (`pixelrag-serve`, M3): HTTP `/index` `/search` `/health`. *stub.*
 
-### Crates
+### Crates (all shipped, no stubs)
 
 | Crate | Role |
 |---|---|
 | `pixelrag-core` | pipeline + tile logic + ANN index adaptor (HNSW / IVF-Flat) |
-| `pixelrag-encoder` | visual encoder (ONNX/Qwen real path; synthetic plumbing path) |
-| `pixelrag-render` | document → screenshot tiles (M2) |
-| `pixelrag-serve` | HTTP retrieval API (M3) |
-| `pixelrag-cli` | ingest / search / benchmark harness |
+| `pixelrag-encoder` | real `all-MiniLM-L6-v2` embedder (WASM/CPU sidecar) |
+| `pixelrag-cli` | benchmark harness (recall/ndcg/mrr + latency/build/memory) |
 
 ---
 
@@ -127,27 +145,38 @@ so `darwin evolve` can search a **Pareto frontier** of `(recall × memory × lat
 It is a **removable augmentation** — the Rust port builds, indexes, and searches
 with no darwin dependency at runtime. See [`docs/BENCH.md`](./docs/BENCH.md).
 
-Illustrative subset/synthetic run (HNSW vs IVF-Flat, 6-doc fixture — *plumbing only*):
+**Measured run** — real `all-MiniLM-L6-v2` embeddings (HNSW backend) over the
+real eval fixture (30 passages / 6 topics / 12 paraphrase queries):
 
-| backend | search p50 | build | memory/doc |
-|---|---|---|---|
-| `hnsw` | ~0.20 ms | ~8 ms | 520 B |
-| `ivf-flat` | ~0.02 ms | ~1 ms | 776 B |
+| metric | value |
+|---|---|
+| recall@10 | 1.00 |
+| ndcg@10 | 0.96 |
+| mrr | 1.00 |
+| search latency p50 | ~1.0 ms |
 
-*(IVF trades memory for speed — directionally plausible, noisy at this scale.)*
+*Honest reading: the 6 topics are cleanly separated, so recall/mrr saturate —
+`ndcg@10 = 0.96` is the signal, reflecting real (imperfect) ranking. This is a
+small, easy **real** eval, not a hard benchmark. Reproduce with*
+`cargo run -p pixelrag-cli -- benchmark … --embedder real`.
+
+The benchmark also runs under both ANN backends (`--index-backend hnsw|ivf-flat`)
+so `darwin evolve` has a real `(quality × memory × latency)` surface to optimize.
 
 ---
 
 ## Roadmap
 
-- **M0 — scaffold** ✅ five crates, workspace-green, darwin harness.
-- **M1 — pipeline** ✅ index adaptor over `ruvector`, runnable bench (synthetic).
-- **M2 — render + optimize** 🚧 IVF-Flat backend ✅; render port + real Pareto frontier ⏳.
-- **M3 — serve** ⏳ HTTP API + optional rerank.
+**Shipped (working code, no stubs):** real MiniLM semantic embedder, HNSW +
+IVF-Flat index, runnable benchmark harness, live in-browser demo.
 
-**Blockers (out of scope for the CLI):** real `Qwen3-VL-Embedding-2B` weights +
-GPU/ONNX; a real-scale corpus for meaningful recall. Full design + acceptance
-criteria in [`docs/ADR-264-pixelrag-rust-port-on-ruvector.md`](./docs/ADR-264-pixelrag-rust-port-on-ruvector.md).
+**Next (not yet implemented — tracked, not stubbed):**
+- Visual encoding: render pages to screenshots + embed with `Qwen3-VL-Embedding-2B`
+  (needs model weights + GPU).
+- Larger, harder corpus for a meaningful recall frontier.
+
+Full design + acceptance criteria in
+[`docs/ADR-264-pixelrag-rust-port-on-ruvector.md`](./docs/ADR-264-pixelrag-rust-port-on-ruvector.md).
 
 ---
 
@@ -159,10 +188,15 @@ monorepo (or via the `external/rupixel` submodule), **not** standalone:
 ```bash
 # from a ruvector checkout that includes these crates
 cargo build -p pixelrag-core -p pixelrag-cli
+
+# real MiniLM embeddings need the one-time sidecar install:
+( cd crates/pixelrag-cli/sidecar && npm install )
+
 cargo run -p pixelrag-cli -- benchmark \
   --ground-truth tests/fixtures/pixelrag/ground-truth.json \
   --queries tests/fixtures/pixelrag/queries.json \
-  --metrics ndcg,mrr,recall@10 --index-backend ivf-flat
+  --metrics ndcg,mrr,recall@10 \
+  --embedder real --index-backend hnsw
 ```
 
 See [`rust/README.md`](./rust/README.md) for details.

@@ -33,8 +33,7 @@ pub struct IngestReport {
 /// The render→embed→index→search orchestrator.
 ///
 /// Owns the configured [`Tiler`], an [`Embedder`] `E`, the boxed [`AnnIndex`]
-/// backend, and the [`Searcher`] view over it. M0 is a skeleton; M1 fills the
-/// ingest/search bodies.
+/// backend, and the [`Searcher`] view over it.
 pub struct Pipeline<E: Embedder> {
     config: Config,
     tiler: Tiler,
@@ -93,14 +92,6 @@ impl<E: Embedder> Pipeline<E> {
     pub fn ingest_rendered(&mut self, doc_id: &str, pages: &[Vec<u8>]) -> Result<IngestReport> {
         let tiles = self.tiler.tile_document(doc_id, pages)?;
         self.index_tiles(&tiles)
-    }
-
-    /// Ingest a document from a source URL/path (M2 — wires `pixelrag-render`).
-    ///
-    /// **M2**: render `source` → page bitmaps via `pixelrag-render` (with disk
-    /// cache), then delegate to [`Pipeline::ingest_rendered`].
-    pub fn ingest_source(&mut self, _source: &str) -> Result<IngestReport> {
-        unimplemented!("M2: pixelrag-render(source) → page bitmaps → ingest_rendered")
     }
 
     /// Embed pre-tiled input directly (used by tests/benchmarks that supply

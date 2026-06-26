@@ -1,4 +1,1 @@
-PLACEHOLDER TILE (subset fixture, not a real screenshot)
-tile_id: tile-001
-doc: energy-report-2025
-caption: Bar chart of energy consumption by region (North, South, East, West). Y-axis = GWh. Visual structure = vertical bar chart with axis labels and legend.
+Inside the green pigment-bearing organelles, a stack of membranes hosts the machinery that absorbs photons. Chlorophyll passes excited electrons down a chain of carriers. This electron flow pumps protons across a membrane to build a gradient.

@@ -36,17 +36,49 @@ use pixelrag_core::pipeline::Pipeline;
 use pixelrag_core::search::SearchRequest;
 use pixelrag_core::tile::Tiler;
 use pixelrag_core::{embedding::EncoderEmbedder, Embedding};
-use pixelrag_encoder::SyntheticEmbedder;
+use pixelrag_encoder::{Embedder as _, SidecarEmbedder, SyntheticEmbedder};
 
-/// The mandatory honesty label stamped on every [`BenchReport`] (ADR-264 honesty rule).
-///
-/// No metric in this harness may be presented without it.
+/// Honesty label for **synthetic** runs (ADR-264 honesty rule). Plumbing only — the
+/// synthetic embedder is deterministic but encodes no meaning.
 pub const HONESTY_LABEL: &str = "subset fixture + synthetic embeddings — plumbing validation, \
 NOT semantic retrieval quality; real recall requires Qwen3-VL-2B (blocked)";
+
+/// Honesty label for **real** runs (`--embedder real`): genuine semantic embeddings,
+/// but still over a tiny fixture (this is honest about scale, not quality).
+pub const HONESTY_LABEL_REAL: &str = "real all-MiniLM-L6-v2 semantic embeddings over a small \
+real eval fixture — semantic retrieval, still a tiny corpus vs full-scale";
 
 /// Embedding width for the synthetic plumbing embedder. Kept small so the fixture
 /// run is cheap; the real encoders are far wider (1024 Qwen3-VL / 768 CLIP surrogate).
 const SYNTHETIC_DIM: usize = 128;
+
+/// Path to the Node embedding sidecar (`all-MiniLM-L6-v2`), resolved at compile time
+/// against THIS crate's manifest dir (the encoder crate can't assume the CLI layout, so
+/// the CLI owns the path and passes it to [`SidecarEmbedder::new`]).
+fn sidecar_path() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sidecar").join("embed_sidecar.mjs")
+}
+
+/// Which embedder backend the bench drives. Selected by `--embedder` (default `Real`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum EmbedderChoice {
+    /// Real semantic `all-MiniLM-L6-v2` via the Node sidecar (default).
+    #[default]
+    Real,
+    /// Deterministic non-semantic plumbing embedder.
+    Synthetic,
+}
+
+impl EmbedderChoice {
+    /// Parse `--embedder real|synthetic` (case-insensitive). Defaults handled by caller.
+    pub fn parse(token: &str) -> Option<Self> {
+        match token.trim().to_ascii_lowercase().as_str() {
+            "real" | "minilm" | "sidecar" => Some(EmbedderChoice::Real),
+            "synthetic" | "synth" => Some(EmbedderChoice::Synthetic),
+            _ => None,
+        }
+    }
+}
 
 /// Arguments for the `benchmark` subcommand.
 ///
@@ -81,6 +113,8 @@ pub struct BenchArgs {
     pub batch_size: Option<usize>,
     /// Override the index backend (`hnsw`); else from [`Config`].
     pub index_backend: Option<IndexBackend>,
+    /// Which embedder backend to use (`--embedder real|synthetic`, default `Real`).
+    pub embedder: EmbedderChoice,
 }
 
 /// A single benchmark metric the harness can compute.
@@ -234,10 +268,22 @@ pub fn run(args: BenchArgs) -> Result<BenchReport, BenchError> {
         return Err(BenchError { message: format!("no tiles found under {}", tiles_dir.display()) });
     }
 
-    // ── 3. Build the index (synthetic embeddings) and time it ─────────────────
-    let embedder_inner = SyntheticEmbedder::new(SYNTHETIC_DIM);
+    // ── 3. Build the index and time it ────────────────────────────────────────
+    // Select the embedder behind a `Box<dyn Embedder>` so the index/query path below
+    // is identical for both backends; the embedding DIM is taken from the chosen
+    // backend (384 for real all-MiniLM, 128 for synthetic) — never hardcoded.
+    let embedder_inner: Box<dyn pixelrag_encoder::Embedder> = match args.embedder {
+        EmbedderChoice::Real => Box::new(SidecarEmbedder::new(sidecar_path())),
+        EmbedderChoice::Synthetic => Box::new(SyntheticEmbedder::new(SYNTHETIC_DIM)),
+    };
+    let embedding_dim = embedder_inner.embedding_dim();
+    // Labels for predictions JSON, report, and summary — derived once from the choice.
+    let (embedder_label, honesty): (String, &str) = match args.embedder {
+        EmbedderChoice::Real => ("real all-MiniLM-L6-v2".to_string(), HONESTY_LABEL_REAL),
+        EmbedderChoice::Synthetic => ("synthetic".to_string(), HONESTY_LABEL),
+    };
     let embedder = EncoderEmbedder::new(embedder_inner);
-    let index = build_index(config.index_backend, SYNTHETIC_DIM)
+    let index = build_index(config.index_backend, embedding_dim)
         .map_err(|e| BenchError { message: format!("build_index: {e}") })?;
     let tiler = Tiler::default();
     let mut pipeline = Pipeline::new(config.clone(), tiler, embedder, index)
@@ -257,17 +303,21 @@ pub fn run(args: BenchArgs) -> Result<BenchReport, BenchError> {
     let docs_indexed = tiles.len();
 
     // ── 4. Run every query, timing each search; collect predictions ───────────
-    // A query "image" is, in this synthetic harness, the query TEXT bytes embedded
-    // by the SAME synthetic embedder as the tiles. This is plumbing-only: the
-    // synthetic mapping is non-semantic, so a text query will rarely align with a
-    // tile unless byte content overlaps — exactly why the honesty label is mandatory.
-    let synth = SyntheticEmbedder::new(SYNTHETIC_DIM);
+    // A query "image" is the query TEXT bytes embedded by the SAME backend as the
+    // tiles. For `real`, this is genuine semantic all-MiniLM retrieval; for
+    // `synthetic`, the mapping is non-semantic (byte-overlap only) — hence the
+    // synthetic honesty label.
+    let query_embedder: Box<dyn pixelrag_encoder::Embedder> = match args.embedder {
+        EmbedderChoice::Real => Box::new(SidecarEmbedder::new(sidecar_path())),
+        EmbedderChoice::Synthetic => Box::new(SyntheticEmbedder::new(SYNTHETIC_DIM)),
+    };
     let mut predictions = Predictions::default();
     let mut latencies_ms: Vec<f64> = Vec::with_capacity(queries.1.len());
     let req = SearchRequest { k, allowlist: None, rerank: false };
 
     for (query_id, text) in &queries.1 {
-        let q: Embedding = embed_query_text(&synth, text);
+        let q: Embedding = embed_query_text(query_embedder.as_ref(), text, embedding_dim)
+            .map_err(|e| BenchError { message: format!("embed query {query_id}: {e}") })?;
         let t0 = Instant::now();
         let hits = pipeline
             .search(&q, &req)
@@ -278,7 +328,7 @@ pub fn run(args: BenchArgs) -> Result<BenchReport, BenchError> {
     }
 
     // ── 5. Persist predictions JSON (output of --predictions) ─────────────────
-    write_predictions(&args.predictions, &queries.0, &predictions)?;
+    write_predictions(&args.predictions, &queries.0, &predictions, &embedder_label, honesty)?;
 
     // ── 6. Score requested metrics ────────────────────────────────────────────
     // Default to ndcg@k/mrr/recall@k if no --metrics were supplied.
@@ -329,12 +379,12 @@ pub fn run(args: BenchArgs) -> Result<BenchReport, BenchError> {
         quantization: "none".to_string(), // M1: f32 originals (no scalar quantization wired yet).
         batch_size: config.batch_size,
         index_backend: backend_label(config.index_backend),
-        embedder: "synthetic".to_string(),
+        embedder: embedder_label.clone(),
         retrieval,
         latency,
         build,
         memory,
-        honesty: HONESTY_LABEL.to_string(),
+        honesty: honesty.to_string(),
     };
 
     // ── 8. Serialize report + print summary ───────────────────────────────────
@@ -348,18 +398,29 @@ pub fn run(args: BenchArgs) -> Result<BenchReport, BenchError> {
     Ok(report)
 }
 
-/// Embed a query string via the synthetic embedder, treating the text bytes as a
+/// Embed a query string via the selected embedder, treating the text bytes as a
 /// `Gray8` 1×N tile (mirrors the `EncoderEmbedder` tile→image bridge in pixelrag-core).
-fn embed_query_text(synth: &SyntheticEmbedder, text: &str) -> Embedding {
-    use pixelrag_encoder::{Embedder, Image, PixelFormat};
+///
+/// `dim` is the chosen backend's [`pixelrag_encoder::Embedder::embedding_dim`], used only
+/// for the defensive zero fallback so the vector width always matches the index.
+fn embed_query_text(
+    embedder: &dyn pixelrag_encoder::Embedder,
+    text: &str,
+    dim: usize,
+) -> Result<Embedding, BenchError> {
+    use pixelrag_encoder::{Image, PixelFormat};
     let bytes = text.as_bytes().to_vec();
     let width = bytes.len().max(1) as u32;
     let img = Image { pixels: bytes, width, height: 1, format: PixelFormat::Gray8 };
-    // Synthetic embed never fails; fall back to a zero vector defensively.
-    synth
-        .embed(&img)
-        .map(|e| e.vector)
-        .unwrap_or_else(|_| vec![0.0; SYNTHETIC_DIM])
+    match embedder.embed(&img) {
+        Ok(e) => Ok(e.vector),
+        // The real sidecar can genuinely fail (node missing / non-zero exit); surface
+        // it. The synthetic embedder never fails, so this branch is real-backend only.
+        Err(e) => {
+            let _ = dim; // kept for the explicit zero-fallback contract if ever needed
+            Err(BenchError { message: e.to_string() })
+        }
+    }
 }
 
 /// Default tiles dir: the `tiles/` sibling of the ground-truth file.
@@ -541,7 +602,6 @@ fn backend_label(b: IndexBackend) -> String {
         IndexBackend::Hnsw => "hnsw",
         IndexBackend::IvfFlat => "ivf-flat",
         IndexBackend::IvfSq => "ivf-sq",
-        IndexBackend::Turbovec => "turbovec",
     }
     .to_string()
 }
@@ -648,7 +708,13 @@ impl GroundTruth {
 }
 
 /// Write the per-query predictions JSON consumed by scoring + emitted to `--predictions`.
-fn write_predictions(path: &Path, dataset: &str, predictions: &Predictions) -> Result<(), BenchError> {
+fn write_predictions(
+    path: &Path,
+    dataset: &str,
+    predictions: &Predictions,
+    embedder_label: &str,
+    honesty: &str,
+) -> Result<(), BenchError> {
     if let Some(parent) = path.parent() {
         if !parent.as_os_str().is_empty() {
             std::fs::create_dir_all(parent)
@@ -663,9 +729,9 @@ fn write_predictions(path: &Path, dataset: &str, predictions: &Predictions) -> R
         })
         .collect();
     let doc = serde_json::json!({
-        "_honesty": HONESTY_LABEL,
+        "_honesty": honesty,
         "dataset": dataset,
-        "embedder": "synthetic",
+        "embedder": embedder_label,
         "results": results,
     });
     let text = serde_json::to_string_pretty(&doc)

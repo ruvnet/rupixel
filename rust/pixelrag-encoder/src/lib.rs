@@ -16,7 +16,7 @@
 //! ## Encoder strategy (ADR-264 §encoder)
 //!
 //! Backends, selected at runtime via [`EmbedderKind`]:
-//! - **M1 plumbing (the only *runnable* backend in this environment):**
+//! - **M1 plumbing (the deterministic non-semantic backend):**
 //!   [`synthetic::SyntheticEmbedder`] — a deterministic, seeded, **non-semantic**
 //!   embedder that maps tile bytes → an L2-normalized f32 vector so the
 //!   render→embed→cache→index→search pipeline runs WITHOUT the 2B model. The real
@@ -24,31 +24,19 @@
 //!   from this backend MUST be labelled "subset fixture + synthetic embeddings —
 //!   plumbing validation, NOT semantic retrieval quality; real recall requires
 //!   Qwen3-VL-2B (blocked)". See the [`synthetic`] module honesty note.
-//! - **v2 (recommended real path, stub):** [`OnnxEmbedder`] — ONNX Runtime (`ort`)
-//!   loads a Qwen3-VL-Embedding-2B export or a CLIP ViT-L ONNX surrogate ([`model`]).
-//!   Stays `unimplemented!("M1-real: needs Qwen3-VL-2B weights + ort")` — the `ort`
-//!   dep is intentionally NOT added.
-//! - **v1 (conservative fallback, stub):** [`SidecarEmbedder`] — shells out to an
-//!   external Python encoder process / HTTP service and marshals tiles + embeddings
-//!   over IPC.
-//! - **v3 (post-M3, aspirational):** a pure-Rust Candle/burn path wired to
-//!   `ruvector-cnn` kernels; not represented as a concrete type in M0.
+//! - **v1 (the runnable real-semantic backend):** [`sidecar::SidecarEmbedder`] — shells
+//!   out to the Node sidecar (`all-MiniLM-L6-v2` over transformers.js, pure WASM/CPU)
+//!   and marshals tile text + embeddings over a stdin/stdout JSON protocol.
 //!
 //! All backends implement the crate-local [`Embedder`] trait (generic, NOT constrained
 //! to a ruvector trait — per ADR-264 "Embedder → generic trait, not constrained to
 //! ruvector"). The [`cache`] module fronts any `Embedder` with an LRU tile-embedding
 //! cache to avoid re-encoding identical tiles.
-//!
-//! ## M0 status
-//!
-//! Every backend method body is `unimplemented!("M1: …")`. Types, trait signatures,
-//! and error variants are real and reflect the ADR; only behaviour is deferred to M1.
 
 #![forbid(unsafe_code)]
 
 pub mod cache;
-pub mod model;
-pub mod onnx;
+pub mod sidecar;
 pub mod synthetic;
 
 use std::fmt;
@@ -143,8 +131,8 @@ pub trait Embedder: Send + Sync {
 
     /// Encode a single tile into an [`Embedding`].
     ///
-    /// M1: preprocess (`model::Preprocessor`) → run the backend → optionally
-    /// L2-normalize. Convenience wrapper over [`Embedder::embed_batch`].
+    /// Preprocess → run the backend → optionally L2-normalize. Convenience wrapper
+    /// over [`Embedder::embed_batch`].
     ///
     /// # Errors
     /// Returns [`EncoderError`] if preprocessing or inference fails.
@@ -167,15 +155,34 @@ pub trait Embedder: Send + Sync {
     fn kind(&self) -> EmbedderKind;
 }
 
+/// Blanket impl so a `Box<dyn Embedder>` is itself an [`Embedder`].
+///
+/// Lets callers (e.g. the CLI bench) select a concrete backend at runtime
+/// (`SidecarEmbedder` vs `SyntheticEmbedder`) behind one boxed type and feed it to a
+/// generic consumer like `pixelrag_core::EncoderEmbedder<E>` without duplicating the
+/// pipeline body per backend.
+impl Embedder for Box<dyn Embedder> {
+    fn embedding_dim(&self) -> usize {
+        (**self).embedding_dim()
+    }
+
+    fn embed_batch(&self, tiles: &[Image]) -> Result<Vec<Embedding>, EncoderError> {
+        (**self).embed_batch(tiles)
+    }
+
+    fn kind(&self) -> EmbedderKind {
+        (**self).kind()
+    }
+}
+
 /// Identifies which encoder backend is active.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum EmbedderKind {
     /// [`synthetic::SyntheticEmbedder`] — deterministic, non-semantic M1 plumbing
-    /// backend. The only runnable backend while Qwen3-VL-2B is blocked.
+    /// backend. Runnable while Qwen3-VL-2B is blocked.
     Synthetic,
-    /// [`OnnxEmbedder`] — ONNX Runtime (`ort`), ADR-264 v2 (real path, stub).
-    Onnx,
-    /// [`SidecarEmbedder`] — external Python encoder, ADR-264 v1 fallback (stub).
+    /// External-encoder sidecar over IPC, ADR-264 v1. The runnable real-semantic
+    /// backend is [`sidecar::SidecarEmbedder`] (Node + `all-MiniLM-L6-v2`).
     Sidecar,
 }
 
@@ -183,64 +190,9 @@ impl fmt::Display for EmbedderKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             EmbedderKind::Synthetic => "synthetic",
-            EmbedderKind::Onnx => "onnx",
             EmbedderKind::Sidecar => "sidecar",
         };
         f.write_str(s)
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Sidecar fallback backend (ADR-264 v1)
-// ---------------------------------------------------------------------------
-
-/// External-Python-encoder fallback ([`EmbedderKind::Sidecar`], ADR-264 v1).
-///
-/// Used when ONNX integration is unavailable or blocked: Rust serializes tiles to
-/// the sidecar (subprocess stdin / a local HTTP endpoint), the Python `pixelrag-encoder-py`
-/// service runs the real Qwen3-VL weights, and embeddings are marshaled back. Slower
-/// (IPC latency) but reuses upstream model weights with zero new ONNX work.
-#[derive(Clone, Debug)]
-pub struct SidecarEmbedder {
-    /// How to reach the encoder (subprocess command or HTTP URL).
-    pub transport: SidecarTransport,
-    /// Embedding dim the sidecar model emits (must match the Python encoder).
-    pub embedding_dim: usize,
-}
-
-/// Transport used by [`SidecarEmbedder`] to reach the external encoder.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SidecarTransport {
-    /// Spawn a subprocess; tiles/embeddings flow over a stdin/stdout JSON protocol.
-    /// `argv[0]` is the program, the rest are fixed args (e.g. `["python", "-m", "pixelrag_encoder_py"]`).
-    Subprocess(Vec<String>),
-    /// POST tiles to a long-running local HTTP encoder service at this base URL.
-    Http(String),
-}
-
-impl SidecarEmbedder {
-    /// Construct a sidecar embedder over the given transport, emitting `embedding_dim`-wide vectors.
-    #[must_use]
-    pub fn new(transport: SidecarTransport, embedding_dim: usize) -> Self {
-        Self { transport, embedding_dim }
-    }
-}
-
-impl Embedder for SidecarEmbedder {
-    fn embedding_dim(&self) -> usize {
-        self.embedding_dim
-    }
-
-    fn embed_batch(&self, _tiles: &[Image]) -> Result<Vec<Embedding>, EncoderError> {
-        // M1: serialize tiles → write to SidecarTransport (Subprocess via
-        // std::process::Command stdin, or Http via the M1 HTTP client) → read back
-        // JSON embeddings → deserialize into Vec<Embedding>. Reuses upstream Python
-        // Qwen3-VL weights; no new ONNX integration. ADR-264 v1.
-        unimplemented!("M1: marshal tiles to the Python encoder sidecar and read embeddings back")
-    }
-
-    fn kind(&self) -> EmbedderKind {
-        EmbedderKind::Sidecar
     }
 }
 
@@ -280,7 +232,8 @@ impl fmt::Display for EncoderError {
 
 impl std::error::Error for EncoderError {}
 
-// Re-export the primary backend so callers can `use pixelrag_encoder::OnnxEmbedder`.
-pub use onnx::OnnxEmbedder;
+// Re-export the runnable real-semantic backend: `use pixelrag_encoder::SidecarEmbedder`
+// (Node + all-MiniLM-L6-v2 over transformers.js).
+pub use sidecar::SidecarEmbedder;
 // Re-export the M1 plumbing backend: `use pixelrag_encoder::SyntheticEmbedder`.
 pub use synthetic::SyntheticEmbedder;

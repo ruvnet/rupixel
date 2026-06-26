@@ -11,8 +11,7 @@
 //! existing ruvector primitives:
 //!
 //! - [`index`] wraps `ruvector-core` (HNSW, M1 primary) / `ruvector-rairs`
-//!   (IVF-SQ, M1 fallback) / `ruvector-turbovec` (M2+ FastScan, ADR-254) behind a
-//!   single [`index::AnnIndex`] adaptor.
+//!   (IVF-Flat / IVF-SQ) behind a single [`index::AnnIndex`] adaptor.
 //! - [`embedding`] defines a generic [`embedding::Embedder`] trait (NOT constrained
 //!   to ruvector) wired to `pixelrag-encoder` in M1.
 //! - [`tile`] turns a rendered document into tiles with bounds + metadata.
@@ -21,12 +20,6 @@
 //! - [`config`] holds the runtime [`config::Config`] with a **removable** darwin
 //!   augmentation path (ADR-256): the binary is fully usable when darwin is absent.
 //!
-//! ## M0 status
-//!
-//! This is the **M0 integration scaffold**: every public type/trait carries its
-//! real M1 signature, but function bodies are `unimplemented!("M1: …")`. No
-//! external crates are linked yet (std-only) so the workspace stays green offline.
-
 #![forbid(unsafe_code)]
 
 pub mod config;
@@ -150,7 +143,7 @@ mod plumbing_tests {
                 .collect())
         }
         fn kind(&self) -> EmbedderKind {
-            EmbedderKind::Onnx
+            EmbedderKind::Synthetic
         }
     }
 

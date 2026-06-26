@@ -1,0 +1,1 @@
+When you load a web page, your computer first breaks the request into small packets, each stamped with a source and destination address. Routers along the way read those addresses and forward each packet hop by hop toward its target. The packets may take different paths and arrive out of order.

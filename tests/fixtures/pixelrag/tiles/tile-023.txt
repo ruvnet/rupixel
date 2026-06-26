@@ -1,0 +1,1 @@
+To avoid swamping a slow link, the sender starts cautiously and ramps up how much it transmits, backing off sharply whenever packets are dropped. This feedback loop keeps shared lines from collapsing under congestion. It quietly shapes the speed of almost every download.

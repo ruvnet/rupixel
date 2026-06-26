@@ -1,0 +1,1 @@
+Before two machines exchange data reliably, they perform a three-step handshake to agree on starting sequence numbers. Each side acknowledges what it has received so lost segments can be detected and resent. This guarantees the bytes arrive complete and in the original order.

@@ -1,4 +1,1 @@
-PLACEHOLDER TILE (subset fixture, not a real screenshot)
-tile_id: tile-005
-doc: misc-distractor
-caption: Distractor tile — a plain paragraph of body text with no table, chart, or diagram. Used to verify the harness does not over-retrieve irrelevant tiles.
+In 1789 a financial crisis and widespread hunger pushed the common people of Paris to rise against the monarchy. A crowd stormed a royal fortress that held weapons and prisoners, an act that became a symbol of the uprising. The old order of nobles and clergy began to collapse.

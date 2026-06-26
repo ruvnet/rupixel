@@ -1,14 +1,18 @@
 # rupixel — Rust crates
 
-These five crates implement the PixelRAG → Rust port on the `ruvector` substrate.
+These crates implement the PixelRAG → Rust port on the `ruvector` substrate.
+All shipped code is real — no `unimplemented!()` stubs.
 
 ```
 pixelrag-core      pipeline + tile logic + ANN index adaptor (HNSW / IVF-Flat)
-pixelrag-encoder   visual encoder (ONNX/Qwen real path; synthetic plumbing path)
-pixelrag-render    document → screenshot tiles (M2 stub)
-pixelrag-serve     HTTP retrieval API (M3 stub)
-pixelrag-cli       ingest / search / benchmark harness
+pixelrag-encoder   real all-MiniLM-L6-v2 embedder (WASM/CPU sidecar)
+pixelrag-cli       benchmark harness (recall/ndcg/mrr + latency/build/memory)
 ```
+
+The `pixelrag-cli/sidecar/` folder holds the Node embedding sidecar
+(`embed_sidecar.mjs` + `package.json`); run `npm install` there once before the
+`--embedder real` benchmark. The visual encoder (Qwen3-VL over rendered
+screenshots) is roadmap, not shipped stub code.
 
 ## Important: these build inside the ruvector monorepo, not standalone
 

@@ -1,0 +1,1 @@
+Humans prefer names like a website's domain, but machines need numeric addresses to actually connect. A distributed lookup system translates the friendly name into the right numeric address on demand. Your device caches the answer so the next visit is faster.

@@ -27,8 +27,6 @@ pub enum IndexBackend {
     IvfFlat,
     /// `ruvector-rairs` IVF-SQ — M1 fallback when HNSW memory exceeds budget (ADR-193).
     IvfSq,
-    /// `ruvector-turbovec` multi-bit FastScan — M2+ optimization, only if ADR-254 ships.
-    Turbovec,
 }
 
 impl Default for IndexBackend {
@@ -104,7 +102,6 @@ impl Config {
                 "hnsw" => IndexBackend::Hnsw,
                 "ivfflat" | "ivf_flat" | "ivf-flat" => IndexBackend::IvfFlat,
                 "ivfsq" | "ivf_sq" | "ivf-sq" => IndexBackend::IvfSq,
-                "turbovec" => IndexBackend::Turbovec,
                 other => return Err(Error::Config(format!("unknown index_backend '{other}'"))),
             };
         }

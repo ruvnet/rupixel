@@ -1,12 +1,19 @@
 {
-  "_comment": "SUBSET ground truth for PixelRAG darwin harness (ADR-264). NOT upstream. For each query_id, 'relevant' is the ranked list of tile_ids (most relevant first) used to compute recall@10 / NDCG@10 / MRR.",
-  "dataset": "pixelrag-subset-v0",
+  "_comment": "REAL semantic-eval SUBSET ground truth for the PixelRAG darwin harness (ADR-264). For each query_id, 'relevant' lists the same-topic tile_ids (most relevant first). Each query's relevant set is its whole topic cluster of 5 tiles, with the closest-matching tile ranked first so NDCG@10 rewards correct ordering. Schema is harness-native: an object with a 'relevance' array of {query_id, relevant}. The simpler {query_id: [tile_ids]} map form is documented in README. Still tiny vs the 8.28M-page upstream corpus.",
+  "dataset": "pixelrag-semantic-v1",
   "k": 10,
   "relevance": [
-    { "query_id": "q-001", "relevant": ["tile-000", "tile-003"] },
-    { "query_id": "q-002", "relevant": ["tile-001"] },
-    { "query_id": "q-003", "relevant": ["tile-002"] },
-    { "query_id": "q-004", "relevant": ["tile-003", "tile-000"] },
-    { "query_id": "q-005", "relevant": ["tile-004", "tile-001"] }
+    { "query_id": "q-01", "relevant": ["tile-000", "tile-003", "tile-001", "tile-002", "tile-004"] },
+    { "query_id": "q-02", "relevant": ["tile-002", "tile-000", "tile-001", "tile-004", "tile-003"] },
+    { "query_id": "q-03", "relevant": ["tile-005", "tile-008", "tile-006", "tile-009", "tile-007"] },
+    { "query_id": "q-04", "relevant": ["tile-007", "tile-008", "tile-005", "tile-006", "tile-009"] },
+    { "query_id": "q-05", "relevant": ["tile-010", "tile-011", "tile-014", "tile-012", "tile-013"] },
+    { "query_id": "q-06", "relevant": ["tile-012", "tile-011", "tile-010", "tile-013", "tile-014"] },
+    { "query_id": "q-07", "relevant": ["tile-015", "tile-018", "tile-016", "tile-019", "tile-017"] },
+    { "query_id": "q-08", "relevant": ["tile-016", "tile-019", "tile-015", "tile-018", "tile-017"] },
+    { "query_id": "q-09", "relevant": ["tile-020", "tile-024", "tile-022", "tile-021", "tile-023"] },
+    { "query_id": "q-10", "relevant": ["tile-021", "tile-023", "tile-020", "tile-024", "tile-022"] },
+    { "query_id": "q-11", "relevant": ["tile-025", "tile-028", "tile-027", "tile-029", "tile-026"] },
+    { "query_id": "q-12", "relevant": ["tile-026", "tile-025", "tile-028", "tile-027", "tile-029"] }
   ]
 }

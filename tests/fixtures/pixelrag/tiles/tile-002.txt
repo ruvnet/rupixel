@@ -1,4 +1,1 @@
-PLACEHOLDER TILE (subset fixture, not a real screenshot)
-tile_id: tile-002
-doc: org-handbook
-caption: Organizational chart for the engineering team. Boxes connected by lines showing reporting hierarchy. Visual structure = node-and-edge org diagram.
+The Calvin cycle fixes carbon dioxide from the air into organic molecules without needing light directly. An enzyme grabs the gas and attaches it to a five-carbon acceptor. Repeated turns of the cycle yield a three-carbon sugar that the cell uses to grow.

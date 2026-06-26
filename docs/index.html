@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rupixel — pixel-native visual RAG (live MiniLM demo)</title>
+  <meta name="description" content="In-browser semantic search demo running all-MiniLM-L6-v2 client-side over a small real text corpus." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">▦</span>
+        <span class="wordmark">rupixel</span>
+      </div>
+      <h1>pixel-native visual RAG <span class="tag">live MiniLM demo</span></h1>
+      <p class="subtitle">
+        Semantic search running entirely in your browser. Type a question in your own
+        words — <code>all-MiniLM-L6-v2</code> embeds it client-side and ranks a real
+        corpus by meaning, not keywords.
+      </p>
+    </header>
+
+    <section class="search">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          id="query"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Ask anything about the corpus…"
+          value="How do scientists weigh the unseen monster lurking at a galaxy's center?"
+          disabled
+        />
+      </div>
+      <div id="status" class="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="status-text">Loading all-MiniLM-L6-v2 (quantized, ~23&nbsp;MB)…</span>
+      </div>
+    </section>
+
+    <section id="results" class="results" aria-live="polite"></section>
+
+    <footer class="footer">
+      <p>
+        Live demo runs <strong>all-MiniLM-L6-v2</strong> in your browser over a small
+        real text corpus (30 passages, 6 topics). The full visual
+        (screenshot&nbsp;/&nbsp;Qwen3-VL) pipeline is WIP —
+        <a href="https://github.com/ruvnet/rupixel" target="_blank" rel="noopener">see the repo</a>.
+      </p>
+      <p class="meta">
+        Model + inference via <a href="https://github.com/xenova/transformers.js" target="_blank" rel="noopener">transformers.js</a> ·
+        runs on CPU/WASM · no server, no precomputed vectors.
+      </p>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

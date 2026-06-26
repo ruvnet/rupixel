@@ -1,4 +1,1 @@
-PLACEHOLDER TILE (subset fixture, not a real screenshot)
-tile_id: tile-003
-doc: vendor-invoice-8841
-caption: Invoice with line items and totals. Columns: Description, Qty, Unit price, Amount. Bottom rows: Subtotal, Tax, Total. Visual structure = invoice table.
+Tiny pores on the underside of a leaf open and close to regulate gas exchange. When they are open, the plant takes in the carbon it needs but also loses water vapor. Guard cells swell or shrink to control how wide these openings are.

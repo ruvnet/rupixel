@@ -1,0 +1,1 @@
+Networking is organized into stacked layers, each handling one job and passing the result to the layer below. The application speaks in messages, a lower layer chops them into segments, and the bottom layers deal with addresses and the physical wire. Each layer wraps the data from above in its own header.

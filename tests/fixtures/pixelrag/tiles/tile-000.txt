@@ -1,4 +1,1 @@
-PLACEHOLDER TILE (subset fixture, not a real screenshot)
-tile_id: tile-000
-doc: acme-q3-financials
-caption: Quarterly revenue table, FY2025. Columns: Q1 Q2 Q3 Q4. Rows: Revenue, COGS, Gross margin. Visual structure = table with header row and totals.
+Green plants capture sunlight in their leaves and turn it into chemical energy. The light-dependent reactions split water molecules and release oxygen as a byproduct. The energy carriers produced then drive the assembly of sugars.

@@ -8,7 +8,6 @@
 //! - `ruvector-rairs::IvfFlat` (IVF, ADR-193) — M1 train-then-add IVF backend;
 //!   the genuine second backend the darwin harness selects between.
 //! - `ruvector-rairs` IVF-SQ (ADR-193) — M1 fallback on memory budget (deferred).
-//! - `ruvector-turbovec` FastScan (ADR-254) — M2+ optimization, if shipped.
 //!
 //! HNSW and IVF have different build lifecycles: HNSW commits each vector on
 //! `add`, whereas IVF must learn k-means centroids over the whole corpus first.
@@ -95,9 +94,8 @@ pub trait AnnIndex: Send + Sync {
 /// Construct the configured ANN backend for embeddings of dimension `dim`.
 ///
 /// **M1**: match on `backend` and build the corresponding ruvector index
-/// (`ruvector-core` HNSW / `ruvector-rairs` IVF-SQ), returning it boxed behind
-/// [`AnnIndex`]. `IndexBackend::Turbovec` is gated on ADR-254 shipping (M2+);
-/// until then it returns [`crate::Error::Index`].
+/// (`ruvector-core` HNSW / `ruvector-rairs` IVF-Flat), returning it boxed behind
+/// [`AnnIndex`].
 pub fn build_index(backend: IndexBackend, dim: usize) -> Result<Box<dyn AnnIndex>> {
     match backend {
         IndexBackend::Hnsw => Ok(Box::new(RuvectorHnswIndex::new(dim)?)),
@@ -107,18 +105,7 @@ pub fn build_index(backend: IndexBackend, dim: usize) -> Result<Box<dyn AnnIndex
              use IndexBackend::IvfFlat for the IVF path or IndexBackend::Hnsw"
                 .into(),
         )),
-        IndexBackend::Turbovec => Err(Error::Index(
-            "Turbovec FastScan backend is gated on ADR-254 shipping (M2+)".into(),
-        )),
     }
-}
-
-/// Load a previously persisted index from a `*.pixelrag` artifact.
-///
-/// **M2**: `bincode`-deserialize the backend + id map and return it behind
-/// [`AnnIndex`].
-pub fn load_index(_path: &std::path::Path) -> Result<Box<dyn AnnIndex>> {
-    unimplemented!("M2: bincode-deserialize *.pixelrag into the wrapped ruvector backend")
 }
 
 // ── M1 concrete backend: ruvector-core HNSW ──────────────────────────────────

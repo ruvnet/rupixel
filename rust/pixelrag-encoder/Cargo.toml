@@ -11,6 +11,11 @@ description = "PixelRAG visual encoder wrapper (ONNX / Qwen3-VL-Embedding / CLIP
 # comments only — DO NOT uncomment until M1 (ADR-264 §Honest embedding strategy).
 # ---------------------------------------------------------------------------
 [dependencies]
+# --- Real Node sidecar backend (ADR-264 v1): all-MiniLM-L6-v2 over transformers.js ---
+# SidecarEmbedder spawns `node embed_sidecar.mjs` and marshals texts/vectors as JSON.
+serde      = { version = "1", features = ["derive"] } # SidecarResponse deserialization
+serde_json = "1"                                       # request/response JSON I/O
+
 # --- M1: ONNX Runtime backend (ADR-264 v2, recommended path) ---
 # ort = "2"                # ONNX Runtime Rust binding (pykeio/ort) — model load + inference
 # ndarray = "0.16"         # tensor handling for ONNX input/output buffers

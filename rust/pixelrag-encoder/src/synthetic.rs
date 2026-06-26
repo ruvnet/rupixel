@@ -3,8 +3,8 @@
 //! # HONESTY NOTE — read before using any metric this produces
 //!
 //! There is **no real Qwen3-VL-Embedding-2B** in this environment (weights + GPU are
-//! blocked). The real encoder path lives in [`crate::onnx`] / [`crate::model`] and stays
-//! an `unimplemented!("M1-real: needs Qwen3-VL-2B weights + ort")` stub.
+//! blocked). The runnable real-semantic path is the Node sidecar
+//! ([`crate::sidecar::SidecarEmbedder`], `all-MiniLM-L6-v2`).
 //!
 //! [`SyntheticEmbedder`] exists **only to exercise the pipeline plumbing** — tile →
 //! embed → cache → index → search — without the 2B model. It maps tile *bytes* through
@@ -27,7 +27,7 @@ use crate::{Embedder, EmbedderKind, Embedding, EncoderError, Image, PixelFormat}
 /// The default embedding width for the synthetic embedder.
 ///
 /// Kept small (128) so plumbing/index tests are cheap; the real encoders emit wider
-/// vectors (1024 for Qwen3-VL, 768 for the CLIP surrogate — see [`crate::model`]).
+/// vectors (1024 for Qwen3-VL, 768 for the CLIP surrogate).
 pub const DEFAULT_SYNTHETIC_DIM: usize = 128;
 
 /// Fixed default seed so synthetic runs are reproducible across machines.
