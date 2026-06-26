@@ -36,12 +36,14 @@ precomputed vectors:
 - **▶ Text RAG** ([ruvnet.github.io/rupixel](https://ruvnet.github.io/rupixel/))
   — **all-MiniLM-L6-v2** ranks a text corpus by meaning.
 
-[![rupixel live visual + text MiniLM/CLIP demo](docs/assets/screenshot.png)](https://ruvnet.github.io/rupixel/)
+[![rupixel live visual RAG demo — CLIP text→document-image in the browser](docs/assets/visual-screenshot.png)](https://ruvnet.github.io/rupixel/visual.html)
 
-> Text→image, by meaning: the query *"a vibrant underwater coral ecosystem"*
-> retrieves the Great Barrier Reef screenshot; *"the unseen monster at a galaxy's
-> center"* retrieves the black-hole page — no keyword overlap. Measured over 8
-> rendered document screenshots: **text→image top-1 = 1.00, ndcg@10 = 1.00**.
+> Text→image, by meaning: *"the unseen monster lurking at a galaxy's center"*
+> retrieves the black-hole page screenshot — no keyword overlap. Measured over 8
+> rendered document screenshots: the **Rust bench (sharp preprocessing) = 8/8
+> top-1**; the **in-browser demo (canvas preprocessing) = 7/8 top-1, MRR 0.94**
+> (CLIP ViT-B/32 is honest-baseline on text-heavy pages — a near-tie on one
+> nature-scene query; Qwen3-VL/ColPali is the GPU upgrade).
 
 ---
 
