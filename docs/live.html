@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>rupixel — real-time video search (live CLIP in your browser)</title>
+  <meta name="description" content="Point a camera or screen at it; type what you're looking for; jump to the moment it appears. CLIP runs client-side via WASM — no server." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="live.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">▦</span>
+        <span class="wordmark">rupixel</span>
+        <nav class="nav">
+          <a class="nav-link" href="visual.html">→ visual demo</a>
+          <a class="nav-link" href="index.html">→ text demo</a>
+        </nav>
+      </div>
+      <h1>real-time video search <span class="tag">live CLIP</span></h1>
+      <p class="subtitle">
+        Point a camera or your screen at it, then describe what you're looking for —
+        <code>CLIP</code> watches the feed in your browser, remembers the moments that
+        change, and jumps to the one that matches your words. No server, no upload.
+      </p>
+    </header>
+
+    <section class="live-controls">
+      <div class="source-row">
+        <span class="source-label">Source:</span>
+        <button id="src-sample" class="src-btn active" type="button">Sample feed</button>
+        <button id="src-webcam" class="src-btn" type="button">Webcam</button>
+        <button id="src-screen" class="src-btn" type="button">Screen</button>
+        <button id="btn-toggle" class="src-btn primary" type="button" disabled>Start</button>
+      </div>
+      <div class="stage">
+        <div class="feed-wrap">
+          <video id="feed" playsinline muted></video>
+          <img id="sample-frame" alt="sample feed frame" />
+          <span id="live-dot" class="live-dot" hidden>● LIVE</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><span id="kf-count" class="stat-num">0</span><span class="stat-lbl">keyframes kept</span></div>
+          <div class="stat"><span id="skip-count" class="stat-num">0</span><span class="stat-lbl">near-dupes skipped</span></div>
+        </div>
+      </div>
+      <div id="status" class="status"><span class="spinner" aria-hidden="true"></span><span id="status-text">Loading CLIP ViT-B/32 (quantized, ~85&nbsp;MB)…</span></div>
+
+      <div class="describe-row">
+        <label class="describe-toggle">
+          <input type="checkbox" id="describe-on" /> Auto-describe each keyframe with a streaming vision LLM
+        </label>
+        <input id="or-key" type="password" autocomplete="off" class="key-input"
+          placeholder="OpenRouter API key (sk-or-…) — stays in your browser" />
+        <span class="key-note" title="Your key is held only in this browser tab, sent only to OpenRouter, and is never uploaded to this site or stored in the repo.">🔒 key stays in your browser</span>
+      </div>
+      <div id="caption" class="caption" hidden></div>
+    </section>
+
+    <section class="search">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="query" type="text" autocomplete="off" spellcheck="false"
+          placeholder="Describe a moment to find…"
+          value="a tall yellow flower that turns to follow the sun" disabled />
+      </div>
+    </section>
+
+    <section id="results" class="results timeline" aria-live="polite"></section>
+
+    <footer class="footer">
+      <p>
+        Every frame is embedded with <strong>CLIP ViT-B/32</strong> in your browser
+        (WASM/CPU). To stay real-time on a CPU it samples a few frames per second and
+        <strong>skips near-identical ones</strong> (a keyframe gate — the idea
+        <a href="https://github.com/ruvnet/midstream" target="_blank" rel="noopener">MidStream</a>
+        scales to production streams). The full design is in the ADRs; a stronger
+        encoder (Qwen3-VL / ColPali) is the GPU upgrade.
+      </p>
+      <p class="meta">CLIP via <a href="https://github.com/xenova/transformers.js" target="_blank" rel="noopener">transformers.js</a> · no server · nothing leaves your machine.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="live.js"></script>
+</body>
+</html>

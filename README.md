@@ -12,13 +12,38 @@ You can search a pile of documents two ways:
    searches the pictures. That matters when the text is locked inside a scan, an
    image, a table, or a chart that ordinary text search can't read.
 
-Try it right now — both run **entirely in your browser**, no install, no server,
-no API key:
+Try it right now — all run **entirely in your browser**, no install, no server:
 
+- **▶ Real-time video search:** https://ruvnet.github.io/rupixel/live.html
+  — point a camera/screen at it, type what you're looking for, jump to the moment.
 - **▶ Visual search:** https://ruvnet.github.io/rupixel/visual.html
 - **▶ Text search:** https://ruvnet.github.io/rupixel/
 
-[![rupixel live demo — type a question, get the matching document screenshot](docs/assets/visual-screenshot.png)](https://ruvnet.github.io/rupixel/visual.html)
+[![rupixel real-time video search — live CLIP keyframes in the browser](docs/assets/live-screenshot.png)](https://ruvnet.github.io/rupixel/live.html)
+
+### Real-time video search (live)
+
+A live feed (sample clip / webcam / screen) is sampled a few times a second.
+Frames that barely changed are **skipped** (a "keyframe gate"); the rest are
+embedded with CLIP so you can search the stream by meaning. Highlights:
+
+- **Runs on your GPU when available** (WebGPU via transformers.js v3), falling back
+  to CPU/WASM automatically — so frame embedding is fast enough to feel live.
+- **Optional auto-describe:** each kept keyframe can be captioned by a streaming
+  vision LLM (default **Qwen3-VL**, a recent, low-cost Chinese vision model), with
+  the caption appearing word-by-word.
+- **Your API key is never exposed.** The public demo is **bring-your-own-key**
+  (your OpenRouter key stays in your browser tab, sent only to OpenRouter, never
+  committed or uploaded). For a shared/managed key, run the included
+  **server-side proxy** (`crates/pixelrag-cli/sidecar/describe-proxy.mjs`) that
+  reads the key from an environment variable — the key never reaches the browser
+  or the repo.
+
+Design details: [ADR-265](docs/adr/ADR-265-real-time-video-visual-rag-rupixel.md)
+(pipeline), [ADR-266](docs/adr/ADR-266-midstream-streaming-frame-ingestion.md)
+(MidStream scale tier + the key-security proxy),
+[ADR-267](docs/adr/ADR-267-photonlayer-optical-front-end-video-frames.md)
+(experimental optical front-end).
 
 > In the demo above, the question *"the unseen monster lurking at a galaxy's center"*
 > brings back the **black-hole** page — even though the question never says the
