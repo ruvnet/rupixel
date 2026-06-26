@@ -32,6 +32,7 @@ const resultsEl = document.getElementById("results");
 const kfCountEl = document.getElementById("kf-count");
 const skipCountEl = document.getElementById("skip-count");
 const btnToggle = document.getElementById("btn-toggle");
+const btnPause = document.getElementById("btn-pause");
 const describeOn = document.getElementById("describe-on");
 const orKeyEl = document.getElementById("or-key");
 const captionEl = document.getElementById("caption");
@@ -54,6 +55,8 @@ let captureTimer = null;
 let sampleTimer = null;
 let sampleList = [];            // [{image, topic}]
 let sampleIdx = 0;
+let sampleCycle = 0;            // current sample-feed index (survives pause/resume)
+let paused = false;
 let lastSig = null;             // perceptual signature of last KEPT frame
 let kept = 0, skipped = 0, startMs = 0;
 const keyframes = [];           // { label, thumb, vec }
@@ -148,6 +151,11 @@ let describing = false;
 let lastCaption = "";
 let burstDropped = 0;         // frames superseded while a describe was in flight
 
+// subtitle overlay: hold each completed caption on screen long enough to read,
+// with a cross-fade, decoupled from the fast streaming transcript below.
+const MIN_CC_MS = 4200;
+let ccShownAt = 0, ccPending = null, ccTimer = null;
+
 function renderCaptionLog() {
   if (!captionLog.length) { captionEl.hidden = true; return; }
   captionEl.hidden = false;
@@ -155,7 +163,24 @@ function renderCaptionLog() {
     `<div class="cap-entry${c.live ? " live" : ""}">` +
     `<span class="cap-ts">${esc(c.ts)}${c.dropped ? ` ·+${c.dropped}` : ""}</span>` +
     `<span class="cap-text">${esc(c.text) || "…"}</span></div>`).join("");
-  ccOverlay.textContent = captionLog[0]?.text || ""; // live subtitle on the video
+}
+
+function showOverlay(text) {
+  if (!text) return;
+  ccPending = text;
+  const wait = Math.max(0, MIN_CC_MS - (performance.now() - ccShownAt));
+  clearTimeout(ccTimer);
+  ccTimer = setTimeout(applyOverlay, wait);
+}
+function applyOverlay() {
+  if (ccPending == null) return;
+  const text = ccPending; ccPending = null;
+  ccOverlay.classList.add("fading");           // fade out current line
+  setTimeout(() => {
+    ccOverlay.textContent = text;
+    ccShownAt = performance.now();
+    ccOverlay.classList.remove("fading");        // fade the new line in
+  }, 240);
 }
 
 function maybeDescribe(kf) {
@@ -218,7 +243,7 @@ async function describeOne(kf, cred, entry) {
         try { const tok = JSON.parse(data).choices?.[0]?.delta?.content; if (tok) { kf.caption += tok; entry.text = kf.caption; renderCaptionLog(); } } catch {}
       }
     }
-    if (kf.caption.trim()) lastCaption = kf.caption.trim();
+    if (kf.caption.trim()) { lastCaption = kf.caption.trim(); showOverlay(lastCaption); }
     if (qEl.value.trim()) runSearch(); // captions now searchable/shown on cards
   } catch (e) { entry.text = `describe error: ${e.message}`; renderCaptionLog(); }
 }
@@ -243,12 +268,21 @@ function runSearch() {
 function stopStream() { if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } }
 function clearKeyframes() { keyframes.length = 0; kept = skipped = 0; lastSig = null; kfCountEl.textContent = "0"; skipCountEl.textContent = "0"; startMs = performance.now(); }
 
+function startSampleCycle() {
+  sampleImg.src = sampleList[sampleCycle].image;
+  sampleIdx = (sampleCycle + 1) % sampleList.length;
+  sampleTimer = setInterval(() => {
+    sampleCycle = (sampleCycle + 1) % sampleList.length;
+    sampleImg.src = sampleList[sampleCycle].image;
+    sampleIdx = (sampleCycle + 1) % sampleList.length;
+  }, 1200);
+}
+
 async function start() {
-  clearKeyframes();
+  clearKeyframes(); paused = false; sampleCycle = 0;
   if (source === "sample") {
     feedEl.hidden = true; sampleImg.hidden = false; liveDot.hidden = true;
-    let i = 0; sampleImg.src = sampleList[0].image; sampleIdx = 1;
-    sampleTimer = setInterval(() => { i = (i + 1) % sampleList.length; sampleImg.src = sampleList[i].image; sampleIdx = (i + 1) % sampleList.length; }, 1200);
+    startSampleCycle();
   } else {
     sampleImg.hidden = true; feedEl.hidden = false;
     try {
@@ -259,15 +293,38 @@ async function start() {
     feedEl.srcObject = stream; await feedEl.play(); liveDot.hidden = false;
   }
   running = true; btnToggle.textContent = "Stop"; btnToggle.classList.add("running");
+  btnPause.disabled = false; btnPause.textContent = "⏸ Pause"; btnPause.classList.remove("active");
   captureTimer = setInterval(tick, 650);
   setStatus(source === "sample" ? "Sample feed running — watching for scene changes…" : "Live — watching the feed for scene changes…", "ready");
 }
+
+function pause() {
+  if (!running || paused) return;
+  paused = true;
+  clearInterval(captureTimer); clearInterval(sampleTimer);
+  if (stream && !feedEl.paused) feedEl.pause();
+  liveDot.hidden = true;
+  btnPause.textContent = "▶ Resume"; btnPause.classList.add("active");
+  setStatus("Paused — the frame and captions stay up so you can read. Resume to continue.", "ready");
+}
+function resume() {
+  if (!running || !paused) return;
+  paused = false;
+  if (source === "sample") startSampleCycle();
+  else if (stream) { feedEl.play(); liveDot.hidden = false; }
+  captureTimer = setInterval(tick, 650);
+  btnPause.textContent = "⏸ Pause"; btnPause.classList.remove("active");
+  setStatus("Resumed.", "ready");
+}
+
 function stop() {
-  running = false; clearInterval(captureTimer); clearInterval(sampleTimer); stopStream();
+  running = false; paused = false; clearInterval(captureTimer); clearInterval(sampleTimer); stopStream();
   liveDot.hidden = true; btnToggle.textContent = "Start"; btnToggle.classList.remove("running");
+  btnPause.disabled = true; btnPause.textContent = "⏸ Pause"; btnPause.classList.remove("active");
   setStatus("Stopped.", "ready");
 }
 btnToggle.addEventListener("click", () => (running ? stop() : start()));
+btnPause.addEventListener("click", () => (paused ? resume() : pause()));
 for (const [k, b] of Object.entries(srcButtons)) {
   b.addEventListener("click", () => { if (running) stop(); source = k; Object.values(srcButtons).forEach((x) => x.classList.remove("active")); b.classList.add("active"); });
 }

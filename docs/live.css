@@ -60,7 +60,9 @@
   position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: 92%;
   background: rgba(0,0,0,0.74); color: #fff; padding: 0.35rem 0.85rem; border-radius: 8px;
   font-size: 0.95rem; line-height: 1.35; text-align: center; pointer-events: none;
+  transition: opacity 0.24s ease; opacity: 1;
 }
+.cc-overlay.fading { opacity: 0; }
 .cc-overlay:empty { display: none; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 .shot-cap { margin: 0.3rem 0 0; font-size: 0.8rem; opacity: 0.8; line-height: 1.35; }
